@@ -23,6 +23,7 @@ true flight -> barometer + accelerometer -> Kalman filter -> apogee predictor ->
 | 4a | `predictors.py` | Energy, analytic-drag and forward-simulation apogee predictors | Forward sim within 6 m at burnout |
 | 4b | `control.py` | Closed-loop proportional controller with servo rate limit | 3,003 m against a 3,000 m target |
 | 5 | `monte_carlo.py` | 1,000 flights with 9 random uncertainties, sensitivity analysis | 95% band -46/+36 m; pad temperature is the top error source |
+| 6 | `adaptive.py` | In-flight learning of body and flap drag scales (Bayesian least squares) | 1-sigma 19.9 -> 18.5 m; drag error removed as a cause |
 
 ## Run it
 
