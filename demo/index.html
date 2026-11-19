@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* Layout: settings column on the left (rocket, mission, real world), telemetry and Monte Carlo on the right; stacks on phones. */
+/* Layout: settings column scrolls on the left; the right panel is pinned and always exactly one screen tall, so every graph fits. Stacks on phones. */
 :root {
   --bg: #eef0f2;
   --panel: #ffffff;
@@ -39,11 +39,11 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
-.wrap { max-width: 1200px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
-header h1 { font-size: 1.5rem; margin: 0 0 4px; font-weight: 600; text-wrap: balance; }
-header p { margin: 0; color: var(--muted); max-width: 72ch; }
-.grid { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
-@media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+.wrap { max-width: 1500px; margin: 0 auto; padding: 12px 16px 24px; display: grid; gap: 12px; }
+header h1 { font-size: 1.25rem; margin: 0 0 4px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); font-size: 0.85rem; }
+.grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 14px; align-items: start; }
+
 .side { display: grid; gap: 12px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
 details.panel > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
@@ -77,21 +77,45 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .btn.secondary { background: transparent; color: var(--accent); }
 .btn:disabled { opacity: 0.6; cursor: wait; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.main { display: grid; gap: 12px; }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 1000px) { .pair { grid-template-columns: 1fr; } }
-.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-@media (max-width: 640px) { .tiles { grid-template-columns: 1fr 1fr; } }
-.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.main { position: sticky; top: 12px; height: calc(100dvh - 24px); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tabs { flex: none; }
+.tabs button { padding: 9px 6px; font-weight: 500; }
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.view[hidden] { display: none; }
+.charts { flex: 1; min-height: 0; display: grid; grid-template-columns: 3fr 2fr; grid-template-rows: 1fr 1fr; gap: 10px; }
+.c-alt { grid-column: 1; grid-row: 1; } .c-path { grid-column: 2; grid-row: 1; } .c-ctl { grid-column: 1 / span 2; grid-row: 2; }
+@media (max-aspect-ratio: 1/1) {   /* tall screens such as an iPad held upright: stack the three graphs */
+  .charts { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; }
+  .c-alt, .c-path, .c-ctl { grid-column: 1; grid-row: auto; }
+}
+.chart { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.plot { flex: 1; min-height: 0; position: relative; }
+.plot canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.plot.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+details.mcset { flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; }
+details.mcset > summary { cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+details.mcset[open] > summary { margin-bottom: 6px; }
+#view-mc .row, #view-mc .stats, #view-mc .note, #view-mc #view-seg { flex: none; margin: 0; }
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr; }
+  .main { position: static; height: auto; }
+  .charts { grid-template-columns: 1fr; grid-template-rows: none; }
+  .c-alt, .c-path, .c-ctl { grid-column: 1; grid-row: auto; }
+  .plot { flex: none; height: 240px; }
+  .plot.card { height: 280px; }
+}
+.tiles { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
 .tile .k { font-size: 0.78rem; color: var(--muted); }
-.tile .v { font-family: var(--font-mono); font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.tile .v { font-family: var(--font-mono); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
 .tile .s { font-size: 0.8rem; color: var(--muted); }
 .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; color: #fff; }
-.chart { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 8px; }
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 6px; }
 .chart h3 { margin: 0 0 4px; font-size: 0.9rem; font-weight: 600; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); margin-bottom: 2px; }
 .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
-canvas { width: 100%; display: block; }
+canvas { display: block; }
 .mcgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 8px 0 10px; }
 @media (max-width: 640px) { .mcgrid { grid-template-columns: 1fr; } }
 .mcgrid .ctrl { margin: 0; }
@@ -105,13 +129,12 @@ canvas { width: 100%; display: block; }
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Airbrake Apogee Controller</h1>
-    <p>Each flight runs the full guidance chain: noisy barometer and accelerometer, a Kalman filter, an onboard apogee predictor and a flap controller. The rocket panel sets the nominal design the flight computer believes in. The real-world sliders change the actual flight without telling the computer.</p>
-  </header>
-
   <div class="grid">
     <div class="side">
+      <header>
+        <h1>Airbrake Apogee Controller</h1>
+        <p>Full guidance chain: noisy sensors, Kalman filter, apogee predictor and flap controller. The rocket panel is what the flight computer believes; the real-world sliders change the actual flight without telling it.</p>
+      </header>
       <details class="panel" open>
         <summary><h2>Rocket</h2></summary>
         <div class="ctrl">
@@ -226,33 +249,39 @@ canvas { width: 100%; display: block; }
     </div>
 
     <main class="main">
-      <div class="tiles">
+      <div class="seg tabs" role="tablist" aria-label="View">
+        <button id="tab-flight" role="tab" aria-pressed="true">This flight</button>
+        <button id="tab-mc" role="tab" aria-pressed="false">Monte Carlo</button>
+      </div>
+
+      <section class="view" id="view-flight" aria-label="This flight">
+        <div class="tiles">
         <div class="tile"><div class="k">Apogee</div><div class="v" id="t-apo">-</div><div class="s" id="t-apo-s"></div></div>
         <div class="tile"><div class="k">Miss vs target</div><div class="v" id="t-miss">-</div><div class="s" id="t-miss-s"></div></div>
         <div class="tile"><div class="k">Peak flap opening</div><div class="v" id="t-flap">-</div><div class="s" id="t-flap-s"></div></div>
         <div class="tile"><div class="k">Drift at apogee</div><div class="v" id="t-kf">-</div><div class="s" id="t-kf-s"></div></div>
       </div>
-
-      <div class="pair">
-        <div class="chart">
-          <h3>Altitude [m] vs time [s]</h3>
-          <div class="legend"><span><i style="background:var(--accent)"></i>This flight</span><span><i style="background:var(--ghost)"></i>No airbrake</span><span><i style="background:var(--muted);height:1px"></i>Target</span></div>
-          <canvas id="c-alt" height="220" aria-label="Altitude over time"></canvas>
+        <div class="charts">
+          <div class="chart c-alt">
+            <h3>Altitude [m] vs time [s]</h3>
+            <div class="legend"><span><i style="background:var(--accent)"></i>This flight</span><span><i style="background:var(--ghost)"></i>No airbrake</span><span><i style="background:var(--muted);height:1px"></i>Target</span></div>
+            <div class="plot"><canvas id="c-alt" aria-label="Altitude over time"></canvas></div>
+          </div>
+          <div class="chart c-path">
+            <h3>Flight path [m]</h3>
+            <div class="legend"><span><i style="background:var(--accent)"></i>This flight</span><span><i style="background:var(--ghost)"></i>No airbrake</span></div>
+            <div class="plot"><canvas id="c-path" aria-label="Flight path"></canvas></div>
+          </div>
+          <div class="chart c-ctl">
+            <h3>Predicted apogee and flap opening vs time [s]</h3>
+            <div class="legend"><span><i style="background:var(--accent)"></i>Predicted apogee if flaps close now [m, left]</span><span><i style="background:var(--brake)"></i>Flap opening [%, right]</span></div>
+            <div class="plot"><canvas id="c-ctl" aria-label="Predicted apogee and flap opening"></canvas></div>
+          </div>
         </div>
-        <div class="chart">
-          <h3>Flight path: altitude vs downrange [m]</h3>
-          <div class="legend"><span><i style="background:var(--accent)"></i>This flight</span><span><i style="background:var(--ghost)"></i>No airbrake</span></div>
-          <canvas id="c-path" height="220" aria-label="Flight path"></canvas>
-        </div>
-      </div>
-      <div class="chart">
-        <h3>Predicted apogee and flap opening vs time [s]</h3>
-        <div class="legend"><span><i style="background:var(--accent)"></i>Predicted apogee if flaps close now [m, left]</span><span><i style="background:var(--brake)"></i>Flap opening [%, right]</span></div>
-        <canvas id="c-ctl" height="190" aria-label="Predicted apogee and flap opening"></canvas>
-      </div>
+      </section>
 
-      <section class="chart" aria-labelledby="mc-h">
-        <h3 id="mc-h">Monte Carlo</h3>
+      <section class="view" id="view-mc" hidden aria-label="Monte Carlo">
+                <details class="mcset"><summary>Uncertainty settings</summary>
         <p class="note">Every flight draws a random real world around the nominal rocket above, using the rail tilt and flight computer settings on the left. Spreads are 1-sigma; wind is uniform in the range shown. Stats count only flights that could reach the target with flaps closed.</p>
         <div class="mcgrid">
           <div class="ctrl"><label for="s-drag">Body drag spread <output id="o-s-drag"></output></label><input id="s-drag" type="range" min="0" max="20" step="1" value="7"></div>
@@ -263,6 +292,7 @@ canvas { width: 100%; display: block; }
           <div class="ctrl"><label for="s-bias">Accel bias spread <output id="o-s-bias"></output></label><input id="s-bias" type="range" min="0" max="0.5" step="0.05" value="0.2"></div>
           <div class="ctrl"><label for="s-wind">Wind range, uniform <output id="o-s-wind"></output></label><input id="s-wind" type="range" min="0" max="12" step="1" value="6"></div>
         </div>
+        </details>
         <div class="row">
           <div class="seg" role="group" aria-label="Number of flights" id="n-seg">
             <button data-n="100" aria-pressed="false">100</button>
@@ -286,12 +316,11 @@ canvas { width: 100%; display: block; }
           <button data-v="wind" aria-pressed="false">Miss vs wind</button>
         </div>
         <p class="note" id="view-note"></p>
-        <canvas id="c-mc" height="240" aria-label="Monte Carlo results"></canvas>
+        <div class="plot card"><canvas id="c-mc" aria-label="Monte Carlo results"></canvas></div>
       </section>
-
-      <p class="note">2-D point-mass simulation: off the rail the rocket aligns instantly with the relative wind, a worst case for weathercocking; no gusts. Body Cd follows a typical Mach curve scaled to the subsonic value entered. Supersonic barometer errors are not modelled, so 9 km results are optimistic. Built as a portfolio project by A. E. M. Estiuk Ahmed.</p>
     </main>
   </div>
+  <p class="note">2-D point-mass simulation: off the rail the rocket aligns instantly with the relative wind, a worst case for weathercocking; no gusts. Body Cd follows a typical Mach curve scaled to the subsonic value entered. Supersonic barometer errors are not modelled, so 9 km results are optimistic. Built as a portfolio project by A. E. M. Estiuk Ahmed.</p>
 </div>
 
 <script>
@@ -549,10 +578,10 @@ function run() {
 // ---------------- charts ----------------
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function setup(cv) {
-  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = +cv.getAttribute("height");
-  cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + "px";
+  const dpr = window.devicePixelRatio || 1, box = cv.parentElement, w = Math.max(1, box.clientWidth), h = Math.max(1, box.clientHeight);
+  cv.width = w * dpr; cv.height = h * dpr;
   const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-  g.font = "11px " + css("--font-mono"); return [g, w, h];
+  g.font = "12px " + css("--font-mono"); return [g, w, h];
 }
 function ticks(lo, hi, n) {
   const s0 = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(s0)));
@@ -654,13 +683,13 @@ function drawMC() {
     const [X, Y] = axes(g, w, h, [L, H], [0, Math.max(...cOn, ...cOff) * 1.15], pad, { nx: 5 });
     [[cOff, "--ghost"], [cOn, "--accent"]].forEach(([c, col]) => { g.fillStyle = css(col); c.forEach((n, k) => { if (n) g.fillRect(X(L + k*bw) + 1, Y(n), Math.max(1, X(L + (k+1)*bw) - X(L + k*bw) - 2), Y(0) - Y(n)); }); });
     g.strokeStyle = css("--ink"); g.setLineDash([4, 4]); g.beginPath(); g.moveTo(X(mc.target), pad.t); g.lineTo(X(mc.target), h - pad.b); g.stroke(); g.setLineDash([]);
-    g.font = "11px " + css("--font-body"); g.textAlign = "right"; g.textBaseline = "top";
+    g.font = "12px " + css("--font-body"); g.textAlign = "right"; g.textBaseline = "top";
     g.fillStyle = css("--accent"); g.fillText("■ with airbrake", w - pad.r - 4, pad.t + 2);
     g.fillStyle = css("--ghost"); g.fillText("■ no airbrake", w - pad.r - 4, pad.t + 18);
   } else if (state.view === "sens") {
     const rows = SENS.map(([k, name]) => [name, corr(mc.params.map(p => p[k]), mc.miss)]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
     const lw = 128, rh = (h - 26) / rows.length, X = v => lw + (v + 1) / 2 * (w - lw - 14);
-    g.textBaseline = "middle"; g.font = "12px " + css("--font-body");
+    g.textBaseline = "middle"; g.font = "13px " + css("--font-body");
     rows.forEach(([name, c], i) => {
       const y = 4 + i * rh + rh/2;
       g.fillStyle = css("--ink"); g.textAlign = "right"; g.fillText(name, lw - 8, y);
@@ -747,6 +776,14 @@ $("preset").addEventListener("change", e => { const p = PRESETS[e.target.value];
 $("reset").onclick = () => { Object.entries(WORLD0).forEach(([k, v]) => $(k).value = v); run(); };
 $("reseed").onclick = () => { state.seed = Math.floor(Math.random() * 1e6); run(); };
 $("mc").onclick = runMC;
+function showTab(which) {
+  $("tab-flight").setAttribute("aria-pressed", which === "flight"); $("tab-mc").setAttribute("aria-pressed", which === "mc");
+  $("view-flight").hidden = which !== "flight"; $("view-mc").hidden = which !== "mc";
+  draw();
+}
+$("tab-flight").onclick = () => showTab("flight");
+$("tab-mc").onclick = () => showTab("mc");
+if (window.ResizeObserver) new ResizeObserver(() => later(draw)).observe(document.querySelector(".main"));
 window.addEventListener("resize", () => later(draw));
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
 new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
