@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airbrake Apogee Controller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: controls column on the left, telemetry charts on the right; stacks on phones. */
+:root {
+  --bg: #eef0f2;
+  --panel: #ffffff;
+  --ink: #16202a;
+  --muted: #5d6b78;
+  --line: #d5dbe1;
+  --accent: #1f5fbf;      /* controlled flight */
+  --brake: #d9731a;       /* flap opening */
+  --ghost: #9aa5b0;       /* uncontrolled flight */
+  --good: #1f8a4c;
+  --warn: #b7791f;
+  --bad: #c0392b;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1419; --panel: #172029; --ink: #e6ebf0; --muted: #93a1ae; --line: #2a3642;
+    --accent: #5b9bf0; --brake: #f0954a; --ghost: #5f6d7a; --good: #4cc27f; --warn: #e0a84a; --bad: #ef6b5b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1419; --panel: #172029; --ink: #e6ebf0; --muted: #93a1ae; --line: #2a3642;
+  --accent: #5b9bf0; --brake: #f0954a; --ghost: #5f6d7a; --good: #4cc27f; --warn: #e0a84a; --bad: #ef6b5b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
+header h1 { font-size: 1.5rem; margin: 0 0 4px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 70ch; }
+.grid { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.panel h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+.ctrl { display: grid; gap: 4px; margin-bottom: 14px; }
+.ctrl label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; }
+.ctrl output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent); }
+.ctrl small { color: var(--muted); font-size: 0.78rem; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 0.85rem; padding: 7px 6px; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { font: inherit; font-weight: 500; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.btn.secondary { background: transparent; color: var(--accent); }
+.btn:disabled { opacity: 0.6; cursor: wait; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 520px) { .tiles { grid-template-columns: 1fr; } }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.tile .k { font-size: 0.78rem; color: var(--muted); }
+.tile .v { font-family: var(--font-mono); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 0.8rem; color: var(--muted); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; color: #fff; }
+.charts { display: grid; gap: 12px; }
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 6px; }
+.chart h3 { margin: 0 0 4px; font-size: 0.9rem; font-weight: 600; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); margin-bottom: 2px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+canvas { width: 100%; display: block; }
+.mcstats { font-family: var(--font-mono); font-size: 0.85rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.note { font-size: 0.82rem; color: var(--muted); max-width: 80ch; }
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Airbrake Apogee Controller</h1>
+    <p>Each flight runs the real guidance chain: noisy barometer and accelerometer, a Kalman filter, an onboard apogee predictor and a flap controller. The sliders set the real world. The flight computer does not know them; it always assumes the nominal rocket.</p>
+  </header>
+
+  <div class="grid">
+    <aside class="panel" aria-label="Flight conditions">
+      <h2>Mission</h2>
+      <div class="ctrl">
+        <label for="target">Target apogee <output id="o-target"></output></label>
+        <input id="target" type="range" min="2700" max="3400" step="50" value="3000">
+      </div>
+      <div class="ctrl">
+        <span style="font-size:0.9rem">Airbrake controller</span>
+        <div class="seg" role="group" aria-label="Airbrake controller">
+          <button id="ctrl-on" aria-pressed="true">On</button>
+          <button id="ctrl-off" aria-pressed="false">Off</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <span style="font-size:0.9rem">Kalman filter near Mach 1</span>
+        <div class="seg" role="group" aria-label="Kalman filter mode">
+          <button id="kf-lock" aria-pressed="true">Ignore baro</button>
+          <button id="kf-plain" aria-pressed="false">Trust baro</button>
+        </div>
+        <small>"Trust baro" lets the fake transonic dip into the filter.</small>
+      </div>
+
+      <h2 style="margin-top:18px">Real world (unknown to the computer)</h2>
+      <div class="ctrl">
+        <label for="drag">Body drag vs model <output id="o-drag"></output></label>
+        <input id="drag" type="range" min="-20" max="20" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label for="imp">Motor impulse vs spec <output id="o-imp"></output></label>
+        <input id="imp" type="range" min="-10" max="10" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label for="padT">Pad temperature sensor error <output id="o-padT"></output></label>
+        <input id="padT" type="range" min="-3" max="3" step="0.5" value="0">
+        <small>The barometer uses this to turn pressure into altitude.</small>
+      </div>
+      <div class="ctrl">
+        <label for="trans">Transonic baro dip <output id="o-trans"></output></label>
+        <input id="trans" type="range" min="0" max="200" step="10" value="120">
+      </div>
+      <div class="ctrl">
+        <label for="bias">Accelerometer bias <output id="o-bias"></output></label>
+        <input id="bias" type="range" min="-0.5" max="0.5" step="0.05" value="0.15">
+      </div>
+      <div class="row">
+        <button class="btn secondary" id="reset">Reset to nominal</button>
+        <button class="btn secondary" id="reseed">New sensor noise</button>
+      </div>
+    </aside>
+
+    <main class="charts">
+      <div class="tiles">
+        <div class="tile"><div class="k">Apogee</div><div class="v" id="t-apo">-</div><div class="s" id="t-apo-s"></div></div>
+        <div class="tile"><div class="k">Miss vs target</div><div class="v" id="t-miss">-</div><div class="s" id="t-miss-s"></div></div>
+        <div class="tile"><div class="k">Worst filter altitude error</div><div class="v" id="t-kf">-</div><div class="s">estimate minus truth</div></div>
+      </div>
+
+      <div class="chart">
+        <h3>Altitude [m] vs time [s]</h3>
+        <div class="legend"><span><i style="background:var(--accent)"></i>This flight</span><span><i style="background:var(--ghost)"></i>Same rocket, no airbrake</span><span><i style="background:var(--muted);height:1px"></i>Target</span></div>
+        <canvas id="c-alt" height="220" aria-label="Altitude over time"></canvas>
+      </div>
+      <div class="chart">
+        <h3>Predicted apogee and flap opening vs time [s]</h3>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Predicted apogee if flaps close now (left axis)</span><span><i style="background:var(--brake)"></i>Flap opening % (right axis)</span></div>
+        <canvas id="c-ctl" height="200" aria-label="Predicted apogee and flap opening"></canvas>
+      </div>
+
+      <div class="chart">
+        <h3>Monte Carlo: miss distance [m] over many random flights</h3>
+        <p class="note" style="margin:2px 0 8px">Each flight draws drag (7% sigma), motor impulse (3%), mass, flap drag, accelerometer bias, weather, pad sensor error and transonic dip at random. Uses the target and filter mode above.</p>
+        <div class="row" style="align-items:center; margin-bottom:6px">
+          <button class="btn" id="mc">Fly 300 rockets</button>
+          <span class="mcstats" id="mc-stats">Not run yet.</span>
+        </div>
+        <canvas id="c-mc" height="200" aria-label="Histogram of apogee miss"></canvas>
+      </div>
+
+      <p class="note">1-D vertical simulation with placeholder rocket values (130 mm, 18 kg dry, about 7.7 kNs motor). No wind or launch angle yet. Built as a portfolio project by A. E. M. Estiuk Ahmed.</p>
+    </main>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ---------------- constants (match the Python project) ----------------
+const G0 = 9.80665, AREA = Math.PI * 0.065 * 0.065, DRY = 18.0, PROP = 4.5, BURN = 4.0;
+const TT = [0, 0.1, 0.5, 3.0, 3.6, 4.0], TF = [0, 2900, 2700, 2500, 800, 0].map(x => x * 0.86);
+const A_BRAKE = 0.008, CD_BRAKE = 1.2, DT = 0.01, KP = 1 / 150;
+const MACH = [0, 0.5, 0.8, 0.95, 1.05, 1.2, 2.0], CDS = [0.45, 0.44, 0.46, 0.60, 0.70, 0.62, 0.50];
+const BARO_N = 2.0, ACC_N = 0.5;
+
+function interp(x, xs, ys) {
+  if (x <= xs[0]) return ys[0];
+  for (let i = 1; i < xs.length; i++) if (x <= xs[i]) return ys[i-1] + (ys[i] - ys[i-1]) * (x - xs[i-1]) / (xs[i] - xs[i-1]);
+  return ys[ys.length - 1];
+}
+const thrustN = t => t > BURN ? 0 : interp(t, TT, TF);
+// cumulative impulse fraction table for mass
+const CUM = (() => { const n = 401, c = new Float64Array(n); for (let i = 1; i < n; i++) { const t0 = (i-1)*0.01, t1 = i*0.01; c[i] = c[i-1] + 0.5*(thrustN(t0)+thrustN(t1))*0.01; } for (let i = 0; i < n; i++) c[i] /= c[n-1]; return c; })();
+const burnedFrac = t => t >= BURN ? 1 : (() => { const x = t / 0.01, i = Math.floor(x); return CUM[i] + (CUM[Math.min(i+1, 400)] - CUM[i]) * (x - i); })();
+const cd = m => interp(m, MACH, CDS);
+function isa(h) { const T = 288.15 - 0.0065*h, p = 101325*Math.pow(T/288.15, 5.2561); return [p/(287.05*T), Math.sqrt(1.4*287.05*T)]; }
+
+function rng(seed) {
+  let a = seed >>> 0;
+  const u = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const n = () => { let x = 0; while (x === 0) x = u(); return Math.sqrt(-2*Math.log(x)) * Math.cos(2*Math.PI*u()); };
+  return { u, n };
+}
+
+// ---------------- onboard predictor (nominal model, flaps closed) ----------------
+function predict(h, v) {
+  const dt = 0.1;
+  while (v > 0) {
+    const [rho, a] = isa(Math.max(h, 0));
+    const k = 0.5 * rho * cd(v / a) * AREA;
+    const acc = -G0 - k * v * v / DRY;
+    const vn = v + acc * dt;
+    if (vn <= 0) { h += v * v / (2 * -acc); break; }
+    h += 0.5 * (v + vn) * dt; v = vn;
+  }
+  return h;
+}
+
+// ---------------- Kalman filter: state [h, v, bias] ----------------
+function makeKF(lockout) {
+  const dt = DT, x = [0, 0, 0];
+  let P = [[1,0,0],[0,0.1,0],[0,0,0.25]];
+  const F = [[1, dt, -0.5*dt*dt],[0,1,-dt],[0,0,1]], B = [0.5*dt*dt, dt, 0];
+  const q = Math.pow(ACC_N*1.5, 2), R = BARO_N*BARO_N;
+  const Q = [0,1,2].map(i => [0,1,2].map(j => q*B[i]*B[j] + (i===2&&j===2 ? 1e-7 : 0)));
+  const mul = (A, Bm) => A.map((r,i) => [0,1,2].map(j => r[0]*Bm[0][j] + r[1]*Bm[1][j] + r[2]*Bm[2][j]));
+  const T = A => [0,1,2].map(i => [0,1,2].map(j => A[j][i]));
+  return function step(acc, baro) {
+    const nx = [0,1,2].map(i => F[i][0]*x[0] + F[i][1]*x[1] + F[i][2]*x[2] + B[i]*acc);
+    x[0]=nx[0]; x[1]=nx[1]; x[2]=nx[2];
+    P = mul(mul(F, P), T(F)).map((r,i) => r.map((v,j) => v + Q[i][j]));
+    if (lockout) { const a = isa(Math.max(x[0], 0))[1]; if (Math.abs(x[1]) / a > 0.75) return x; }
+    const y = baro - x[0], S = P[0][0] + R, K = [P[0][0]/S, P[1][0]/S, P[2][0]/S];
+    for (let i = 0; i < 3; i++) x[i] += K[i] * y;
+    const P0 = P[0].slice();
+    P = P.map((r,i) => r.map((v,j) => v - K[i]*P0[j]));
+    return x;
+  };
+}
+
+// ---------------- one flight ----------------
+// p: {drag, imp, dry, cdb, bias, dT, padT, trans, transMach, servo}
+function fly(p, opt) {
+  const R = rng(opt.seed), T0 = 288.15 + p.dT, T0e = T0 + p.padT;
+  const atm = h => { const T = T0 - 0.0065*h, pr = 101325*Math.pow(T/T0, 5.2561); return [pr, pr/(287.05*T), Math.sqrt(1.4*287.05*T)]; };
+  const mass = t => p.dry + PROP * (1 - burnedFrac(t));
+  const accel = (t, h, v, u) => {
+    const [, rho, a] = atm(Math.max(h, 0));
+    const drag = 0.5*rho*v*Math.abs(v)*(p.drag*cd(Math.abs(v)/a)*AREA + p.cdb*u*A_BRAKE);
+    return (p.imp*thrustN(t) - drag) / mass(t) - G0;
+  };
+  const kf = makeKF(opt.lockout);
+  let t = 0, h = 0, v = 0, u = 0, uc = 0, i = 0, hmax = 0, kfErr = 0, pred = NaN;
+  const log = opt.record ? [] : null;
+  for (;;) {
+    const a1 = accel(t, h, v, u);
+    const k2v = v + DT/2*a1, a2 = accel(t+DT/2, h+DT/2*v, k2v, u);
+    const k3v = v + DT/2*a2, a3 = accel(t+DT/2, h+DT/2*k2v, k3v, u);
+    const k4v = v + DT*a3,   a4 = accel(t+DT, h+DT*k3v, k4v, u);
+    h += DT/6*(v + 2*k2v + 2*k3v + k4v); v += DT/6*(a1 + 2*a2 + 2*a3 + a4); t += DT;
+    if (h > hmax) hmax = h;
+    if (v < 0 && t > BURN) break;
+    if (!opt.ctrl && !opt.record) continue;
+    // sensors
+    const [pr, , as] = atm(Math.max(h, 0));
+    let baro = T0e/0.0065*(1 - Math.pow(pr/101325, 1/5.2561));
+    baro += -p.trans * Math.exp(-Math.pow((Math.abs(v)/as - p.transMach)/0.06, 2)) + R.n()*BARO_N;
+    const accm = a1 + p.bias + R.n()*ACC_N;
+    const x = kf(accm, baro);
+    kfErr = Math.max(kfErr, Math.abs(x[0] - h));
+    if (opt.ctrl) {
+      if (t > BURN + 0.2 && x[1] > 0 && i % 5 === 0) { pred = predict(x[0], x[1]); uc = Math.min(1, Math.max(0, KP*(pred - opt.target))); }
+      if (x[1] <= 0) uc = 0;
+      const st = DT / p.servo; u += Math.max(-st, Math.min(st, uc - u));
+    }
+    if (log && i % 5 === 0) log.push([t, h, u, (opt.ctrl && t > BURN + 0.2) ? pred : NaN]);
+    i++;
+  }
+  return { apogee: hmax, kfErr, log };
+}
+
+// ---------------- charts ----------------
+function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function setup(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = +cv.getAttribute("height");
+  cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + "px";
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  g.font = "11px " + css("--font-mono"); return [g, w, h];
+}
+function niceTicks(lo, hi, n) {
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m*mag).find(s => s >= step0);
+  const out = []; for (let v = Math.ceil(lo/step)*step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6)); return out;
+}
+function axes(g, w, h, xr, yr, pad, opt = {}) {
+  const X = x => pad.l + (x - xr[0]) / (xr[1] - xr[0]) * (w - pad.l - pad.r);
+  const Y = y => h - pad.b - (y - yr[0]) / (yr[1] - yr[0]) * (h - pad.t - pad.b);
+  g.strokeStyle = css("--line"); g.fillStyle = css("--muted"); g.lineWidth = 1;
+  g.textAlign = "right"; g.textBaseline = "middle";
+  niceTicks(yr[0], yr[1], 4).forEach(v => { g.beginPath(); g.moveTo(pad.l, Y(v)); g.lineTo(w - pad.r, Y(v)); g.stroke(); g.fillText(opt.yfmt ? opt.yfmt(v) : v, pad.l - 6, Y(v)); });
+  g.textAlign = "center"; g.textBaseline = "top";
+  niceTicks(xr[0], xr[1], 6).forEach(v => g.fillText((opt.xfmt ? opt.xfmt(v) : v), X(v), h - pad.b + 5));
+  if (opt.xlabel) { g.textAlign = "right"; g.fillText(opt.xlabel, w - pad.r, h - 14); }
+  return [X, Y];
+}
+function line(g, pts, X, Y, color, width = 2) {
+  g.strokeStyle = color; g.lineWidth = width; g.beginPath(); let on = false;
+  for (const [x, y] of pts) { if (!isFinite(y)) { on = false; continue; } on ? g.lineTo(X(x), Y(y)) : g.moveTo(X(x), Y(y)); on = true; }
+  g.stroke();
+}
+
+// ---------------- UI ----------------
+const $ = id => document.getElementById(id);
+const state = { ctrl: true, lockout: true, seed: 7 };
+const DEFAULTS = { target: 3000, drag: 0, imp: 0, padT: 0, trans: 120, bias: 0.15 };
+function params() {
+  return { drag: 1 + $("drag").value/100, imp: 1 + $("imp").value/100, dry: DRY, cdb: CD_BRAKE, bias: +$("bias").value,
+           dT: 0, padT: +$("padT").value, trans: +$("trans").value, transMach: 0.9, servo: 0.5 };
+}
+const fmtSigned = (v, d = 0) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d);
+function labels() {
+  $("o-target").textContent = (+$("target").value).toLocaleString("en") + " m";
+  $("o-drag").textContent = fmtSigned(+$("drag").value) + "%";
+  $("o-imp").textContent = fmtSigned(+$("imp").value) + "%";
+  $("o-padT").textContent = fmtSigned(+$("padT").value, 1) + " K";
+  $("o-trans").textContent = $("trans").value + " m";
+  $("o-bias").textContent = fmtSigned(+$("bias").value, 2) + " m/s²";
+}
+function missPill(m) {
+  const a = Math.abs(m), c = a <= 25 ? "--good" : a <= 75 ? "--warn" : "--bad", t = a <= 25 ? "On target" : a <= 75 ? "Close" : "Off target";
+  return `<span class="pill" style="background:var(${c})">${t}</span>`;
+}
+let last = null;
+function run() {
+  labels();
+  const target = +$("target").value, p = params();
+  const res = fly(p, { ctrl: state.ctrl, lockout: state.lockout, target, seed: state.seed, record: true });
+  const ghost = fly(p, { ctrl: false, lockout: true, target, seed: state.seed, record: true });
+  last = { res, ghost, target };
+  const miss = res.apogee - target;
+  $("t-apo").textContent = Math.round(res.apogee).toLocaleString("en") + " m";
+  $("t-apo-s").textContent = "No airbrake: " + Math.round(ghost.apogee).toLocaleString("en") + " m";
+  $("t-miss").textContent = fmtSigned(miss, 1) + " m";
+  $("t-miss-s").innerHTML = missPill(miss);
+  $("t-kf").textContent = res.kfErr.toFixed(1) + " m";
+  draw();
+}
+function draw() {
+  if (!last) return;
+  const { res, ghost, target } = last;
+  // altitude
+  let [g, w, h] = setup($("c-alt"));
+  const tmax = Math.ceil(Math.max(res.log.at(-1)[0], ghost.log.at(-1)[0]));
+  const ymax = Math.max(ghost.apogee, res.apogee, target) * 1.08;
+  let [X, Y] = axes(g, w, h, [0, tmax], [0, ymax], { l: 52, r: 12, t: 8, b: 30 });
+  g.setLineDash([4, 4]); line(g, [[0, target], [tmax, target]], X, Y, css("--muted"), 1); g.setLineDash([]);
+  line(g, ghost.log.map(r => [r[0], r[1]]), X, Y, css("--ghost"), 2);
+  line(g, res.log.map(r => [r[0], r[1]]), X, Y, css("--accent"), 2.5);
+  const top = res.log.reduce((a, r) => r[1] > a[1] ? r : a);
+  g.fillStyle = css("--accent"); g.beginPath(); g.arc(X(top[0]), Y(top[1]), 4, 0, 7); g.fill();
+  // control
+  [g, w, h] = setup($("c-ctl"));
+  const preds = res.log.filter(r => isFinite(r[3])).map(r => r[3]);
+  const plo = Math.min(target, ...(preds.length ? preds : [target])) - 50, phi = Math.max(target, ...(preds.length ? preds : [target])) + 50;
+  [X, Y] = axes(g, w, h, [0, tmax], [plo, phi], { l: 52, r: 40, t: 8, b: 30 });
+  const Yu = u => h - 30 - u * (h - 38);
+  g.fillStyle = css("--brake"); g.textAlign = "left"; g.textBaseline = "middle";
+  [0, 50, 100].forEach(v => g.fillText(v + "%", w - 36, Yu(v/100)));
+  g.globalAlpha = 0.18; g.fillStyle = css("--brake"); g.beginPath(); g.moveTo(X(0), Yu(0));
+  res.log.forEach(r => g.lineTo(X(r[0]), Yu(r[2]))); g.lineTo(X(res.log.at(-1)[0]), Yu(0)); g.fill(); g.globalAlpha = 1;
+  g.strokeStyle = css("--brake"); g.lineWidth = 2; g.beginPath(); res.log.forEach((r, k) => k ? g.lineTo(X(r[0]), Yu(r[2])) : g.moveTo(X(r[0]), Yu(r[2]))); g.stroke();
+  g.setLineDash([4, 4]); line(g, [[0, target], [tmax, target]], X, Y, css("--muted"), 1); g.setLineDash([]);
+  line(g, res.log.map(r => [r[0], r[3]]), X, Y, css("--accent"), 2);
+  if (!state.ctrl) { g.fillStyle = css("--muted"); g.textAlign = "center"; g.fillText("Controller off: flaps stay closed", w/2, 20); }
+  drawMC();
+}
+
+// Monte Carlo
+let mcData = null;
+function drawMC() {
+  const [g, w, h] = setup($("c-mc"));
+  if (!mcData) { g.fillStyle = css("--muted"); g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("Press “Fly 300 rockets” to see the spread", w/2, h/2); return; }
+  const miss = mcData.miss, lim = Math.max(100, Math.ceil(Math.max(...miss.map(Math.abs)) / 25) * 25);
+  const bw = lim / 15, bins = new Array(30).fill(0);
+  miss.forEach(m => { const k = Math.min(29, Math.max(0, Math.floor((m + lim) / bw))); bins[k]++; });
+  const [X, Y] = axes(g, w, h, [-lim, lim], [0, Math.max(...bins) * 1.15], { l: 40, r: 12, t: 8, b: 30 }, { xlabel: "apogee minus target [m]", xfmt: v => fmtSigned(v) });
+  const [lo, hi] = mcData.band;
+  g.fillStyle = css("--brake"); g.globalAlpha = 0.12; g.fillRect(X(lo), 8, X(hi) - X(lo), h - 38); g.globalAlpha = 1;
+  g.fillStyle = css("--accent");
+  bins.forEach((c, k) => { const x0 = X(-lim + k*bw), x1 = X(-lim + (k+1)*bw); g.fillRect(x0 + 1, Y(c), x1 - x0 - 2, Y(0) - Y(c)); });
+  g.strokeStyle = css("--ink"); g.lineWidth = 1; g.beginPath(); g.moveTo(X(0), 8); g.lineTo(X(0), h - 30); g.stroke();
+}
+function runMC() {
+  const btn = $("mc"); btn.disabled = true;
+  const N = 300, target = +$("target").value, out = [];
+  const R = rng(12345 + Math.floor(Math.random() * 1e6));
+  let k = 0;
+  (function chunk() {
+    const end = Math.min(N, k + 15);
+    for (; k < end; k++) {
+      const p = { drag: 1 + 0.07*R.n(), imp: 1 + 0.03*R.n(), dry: DRY + 0.3*R.n(), cdb: CD_BRAKE*(1 + 0.1*R.n()),
+                  bias: 0.2*R.n(), dT: -10 + 25*R.u(), padT: R.n(), trans: 60 + 120*R.u(), transMach: 0.85 + 0.1*R.u(), servo: 0.4 + 0.3*R.u() };
+      out.push(fly(p, { ctrl: state.ctrl, lockout: state.lockout, target, seed: 1000 + k, record: false }).apogee - target);
+    }
+    $("mc-stats").textContent = `Flying… ${k}/${N}`;
+    if (k < N) return setTimeout(chunk, 0);
+    const s = out.slice().sort((a, b) => a - b), q = f => s[Math.floor(f * (s.length - 1))];
+    const mean = out.reduce((a, b) => a + b, 0) / N, sd = Math.sqrt(out.reduce((a, b) => a + (b - mean) ** 2, 0) / N);
+    const w25 = out.filter(m => Math.abs(m) <= 25).length / N * 100;
+    mcData = { miss: out, band: [q(0.025), q(0.975)] };
+    $("mc-stats").textContent = `95% band ${fmtSigned(q(0.025))} to ${fmtSigned(q(0.975))} m · 1σ ${sd.toFixed(0)} m · within ±25 m: ${w25.toFixed(0)}%`;
+    btn.disabled = false; drawMC();
+  })();
+}
+
+function seg(onId, offId, key) {
+  const set = v => { state[key] = v; $(onId).setAttribute("aria-pressed", v); $(offId).setAttribute("aria-pressed", !v); mcData = null; $("mc-stats").textContent = "Settings changed. Run again."; run(); };
+  $(onId).onclick = () => set(true); $(offId).onclick = () => set(false);
+}
+seg("ctrl-on", "ctrl-off", "ctrl");
+seg("kf-lock", "kf-plain", "lockout");
+let pending = 0;
+["target", "drag", "imp", "padT", "trans", "bias"].forEach(id => $(id).addEventListener("input", () => { labels(); cancelAnimationFrame(pending); pending = requestAnimationFrame(run); }));
+$("target").addEventListener("change", () => { mcData = null; $("mc-stats").textContent = "Target changed. Run again."; drawMC(); });
+$("reset").onclick = () => { Object.entries(DEFAULTS).forEach(([k, v]) => $(k).value = v); run(); };
+$("reseed").onclick = () => { state.seed = Math.floor(Math.random() * 1e6); run(); };
+$("mc").onclick = runMC;
+window.addEventListener("resize", () => { cancelAnimationFrame(pending); pending = requestAnimationFrame(draw); });
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+run();
+</script>
+</body>
+</html>
