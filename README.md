@@ -24,6 +24,7 @@ true flight -> barometer + accelerometer -> Kalman filter -> apogee predictor ->
 | 4b | `control.py` | Closed-loop proportional controller with servo rate limit | 3,003 m against a 3,000 m target |
 | 5 | `monte_carlo.py` | 1,000 flights with 9 random uncertainties, sensitivity analysis | 95% band -46/+36 m; pad temperature is the top error source |
 | 6 | `adaptive.py` | In-flight learning of body and flap drag scales (Bayesian least squares) | 1-sigma 19.9 -> 18.5 m; drag error removed as a cause |
+| 7 | `wind2d.py` | 2-D flight with wind and a 5 deg rail; gyro-based tilt-aware filter and predictor | Reachable flights: 1-sigma 61 m (1-D computer) -> 22 m (tilt-aware) |
 
 ## Run it
 
@@ -46,18 +47,18 @@ python monte_carlo.py   # about 2-3 minutes on 2 cores
 - **Braking must happen early.** Drag scales with velocity squared, so a 3 s full-open pulse removes 577 m at burnout but only 35 m twelve seconds later.
 - **Do not trust the barometer near Mach 1.** A plain Kalman filter blamed the transonic pressure dip on the accelerometer and was 87 m/s wrong in velocity at the moment braking matters most. A Mach-based lockout fixed it.
 - **Predict, do not just react.** An energy-only apogee estimate is 1,947 m wrong at burnout; an onboard forward simulation is 6 m wrong.
+- **A 1-D flight computer fails in wind.** Tilted flight means airspeed is higher than vertical speed, so the transonic barometer lockout must use airspeed (vertical speed from the filter plus pitch from the gyro). That one change took windy flights from 1-sigma 48 m to 22 m.
 - **The pad temperature sensor matters most.** It sets the pressure-to-altitude conversion; 1 K of error is about 10 m at 3 km, the largest single contributor to the miss.
 
 ## Limitations
 
-- 1-D vertical flight: no wind, weathercocking or rail angle.
+- The 2-D model (step 7) assumes the rocket instantly aligns with the relative wind (zero angle of attack), a worst case for weathercocking. No gusts or 3-D effects.
 - Rocket, motor and flap values are placeholders, not a real vehicle.
 - The transonic barometer error and the Cd-Mach curve are illustrative.
 
 ## Next steps
 
 1. In-flight drag estimation (adaptive control) to remove the drag-mismatch error.
-2. 2-D / 3-DOF simulation with wind and launch angle.
 3. Real vehicle data from OpenRocket or CFD.
 4. Port the estimator and controller to C on a microcontroller and run hardware-in-the-loop against this simulator.
 

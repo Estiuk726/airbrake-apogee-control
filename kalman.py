@@ -33,11 +33,14 @@ class AltitudeKF:
         self.R = BARO_NOISE ** 2
         self.rejected = 0
 
-    def step(self, acc_meas, baro):
+    def step(self, acc_meas, baro, skip_baro=False):
         # Predict
         self.x = self.F @ self.x + self.B * acc_meas
         self.P = self.F @ self.P @ self.F.T + self.Q
         # Decide whether to use the barometer
+        if skip_baro:                                       # caller decided the baro is untrustworthy
+            self.rejected += 1
+            return self.x.copy()
         if self.mach_lockout:
             mach_est = abs(self.x[1]) / atmosphere(max(self.x[0], 0))[1]
             if mach_est > 0.75:
