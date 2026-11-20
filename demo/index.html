@@ -6,41 +6,43 @@
 <title>Airbrake Apogee Controller</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* Launch console: settings rack scrolls on the left, the telemetry display on the right is pinned to one screen. Single dark theme. */
 :root {
-  --bg: #070b10;
-  --panel: #0e151d;
-  --panel-2: #121b25;
-  --ink: #dbe6f0;
-  --muted: #7d8fa1;
-  --line: #1e2b38;
-  --accent: #4fb3ff;      /* telemetry trace, selections */
-  --amber: #ffb547;       /* primary actions, console headings */
-  --brake: #ff8a3d;       /* airbrake flaps */
-  --ghost: #4a5b6c;       /* uncontrolled flight */
+  /* BME Suborbitals palette: black, white, nebula crimson, periwinkle */
+  --bg: #000000;
+  --panel: #111113;
+  --panel-2: #17171a;
+  --ink: #ffffff;
+  --muted: #b3b3b3;
+  --line: #2b2b2b;
+  --accent: #c7cfff;      /* telemetry trace, selections (site link colour) */
+  --amber: #c7244b;       /* primary actions, headings: nebula crimson */
+  --burgundy: #8e202b;
+  --brake: #f0a35e;       /* airbrake flaps */
+  --ghost: #5c5c66;       /* uncontrolled flight */
   --good: #3ddc84;
-  --warn: #ffc247;
+  --warn: #f5b942;
   --bad: #ff5c5c;
-  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Noto Sans", system-ui, sans-serif;
+  --font-body: "Noto Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
-body { background-image: radial-gradient(circle at 1px 1px, rgba(125,143,161,0.08) 1px, transparent 0); background-size: 22px 22px; }
+body { background: radial-gradient(1200px 700px at 85% -10%, rgba(199,36,75,0.22), transparent 60%), radial-gradient(900px 600px at -10% 110%, rgba(142,32,43,0.18), transparent 60%), #000; background-attachment: fixed; }
 .wrap { max-width: 1500px; margin: 0 auto; padding: 0 14px 20px; display: grid; gap: 10px; }
 
 /* top status bar */
 .topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 16px; padding: 8px 4px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.35rem; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
-.brand h1 span { color: var(--amber); }
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 900; font-size: 1.2rem; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.brand h1 span { font-weight: 300; letter-spacing: 0.32em; margin-left: 0.3em; }
 .brand small { color: var(--muted); font-family: var(--font-mono); font-size: 0.72rem; white-space: nowrap; }
 .lights { display: flex; gap: 12px; margin-left: auto; flex-wrap: nowrap; justify-content: flex-end; min-width: 0; overflow: hidden; }
-.light { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.light { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .light i { width: 8px; height: 8px; border-radius: 50%; background: var(--ghost); }
 .light.on i { background: var(--good); box-shadow: 0 0 8px var(--good); }
 .light.warn i { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
@@ -55,14 +57,14 @@ body { background-image: radial-gradient(circle at 1px 1px, rgba(125,143,161,0.0
 .intro { margin: 0; color: var(--muted); font-size: 0.82rem; }
 
 /* panels */
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; position: relative; }
-.panel::before { content: ""; position: absolute; left: -1px; top: 10px; width: 3px; height: 18px; background: var(--amber); border-radius: 0 2px 2px 0; }
+.panel { background: rgba(23,23,23,0.82); backdrop-filter: blur(4px); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; position: relative; }
+.panel::before { content: ""; position: absolute; left: -1px; top: 12px; width: 3px; height: 16px; background: var(--amber); border-radius: 0 2px 2px 0; }
 details.panel > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
 details.panel > summary::-webkit-details-marker { display: none; }
 details.panel > summary::after { content: "+"; color: var(--muted); font-family: var(--font-mono); }
 details.panel[open] > summary::after { content: "\2212"; }
 details.panel[open] > summary { margin-bottom: 12px; }
-h2 { font-family: var(--font-display); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--amber); margin: 0; font-weight: 600; }
+h2 { font-family: var(--font-display); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1px; color: var(--ink); margin: 0; font-weight: 900; }
 .ctrl { display: grid; gap: 4px; margin-bottom: 12px; }
 .ctrl label, .ctrl > span { display: flex; justify-content: space-between; gap: 8px; font-size: 0.86rem; }
 .ctrl output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent); }
@@ -83,11 +85,11 @@ select { font-family: var(--font-body); }
 
 /* console switches and buttons */
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: #091017; }
-.seg button { font: inherit; font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 6px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button { font: inherit; font-family: var(--font-display); font-size: 0.74rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 6px 6px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
 button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, label.btn:focus-within { outline: 2px solid var(--amber); outline-offset: 2px; }
-.btn { font: inherit; font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 16px; border-radius: 4px; border: 1px solid var(--amber); background: var(--amber); color: #1a1205; cursor: pointer; }
+.btn { font: inherit; font-family: var(--font-display); font-weight: 900; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--amber); background: var(--amber); color: #fff; cursor: pointer; }
 .btn.secondary { background: transparent; color: var(--amber); }
 .btn.small { padding: 4px 10px; font-size: 0.82rem; }
 .btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-left: 2px; padding-right: 2px; letter-spacing: 0.04em; }
@@ -98,7 +100,7 @@ label.btn { display: inline-block; }
 /* telemetry display */
 .main { position: sticky; top: calc(var(--tb, 52px) + 8px); height: calc(100dvh - var(--tb, 52px) - 18px); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .tabs { flex: none; }
-.tabs button { padding: 8px 6px; font-size: 1rem; font-weight: 600; }
+.tabs button { padding: 9px 6px; font-size: 0.8rem; font-weight: 900; }
 .view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 .view[hidden] { display: none; }
 .charts { flex: 1; min-height: 0; display: grid; grid-template-columns: 3fr 2fr; grid-template-rows: 1fr 1fr; gap: 8px; }
@@ -108,7 +110,7 @@ label.btn { display: inline-block; }
   .c-alt, .c-path, .c-ctl { grid-column: 1; grid-row: auto; }
 }
 .chart { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px 5px; }
-.chart h3 { margin: 0 0 2px; font-family: var(--font-display); font-size: 0.92rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+.chart h3 { margin: 0 0 2px; font-family: var(--font-display); font-size: 0.78rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--ink); }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.74rem; color: var(--muted); margin-bottom: 2px; }
 .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
 .plot { flex: 1; min-height: 0; position: relative; }
@@ -118,14 +120,14 @@ canvas { display: block; }
 
 .tiles { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .tile, .rtile, .stat { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; }
-.tile .k, .rtile .k, .stat .k { font-family: var(--font-display); font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.tile .v { font-family: var(--font-mono); font-size: 1.35rem; font-variant-numeric: tabular-nums; color: var(--accent); text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent); }
+.tile .k, .rtile .k, .stat .k { font-family: var(--font-display); font-size: 0.66rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.tile .v { font-family: var(--font-mono); font-size: 1.35rem; font-variant-numeric: tabular-nums; color: var(--ink); text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 30%, transparent); }
 .tile .s { font-size: 0.76rem; color: var(--muted); }
-.pill { display: inline-block; padding: 0 8px; border-radius: 3px; font-family: var(--font-display); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #06100a; }
+.pill { display: inline-block; padding: 0 8px; border-radius: 3px; font-family: var(--font-display); font-size: 0.68rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: #06100a; }
 
 .rtiles { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
 .rtile .v { font-family: var(--font-mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--accent); }
-.rtile .v.phase { font-family: var(--font-display); font-size: 1rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; white-space: normal; color: var(--amber); }
+.rtile .v.phase { font-family: var(--font-display); font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; white-space: normal; color: var(--amber); }
 .rtile.wide { grid-column: span 2; }
 .rcontrols { flex: none; flex-wrap: nowrap; }
 .rcontrols .btn { min-width: 90px; }
@@ -139,7 +141,7 @@ canvas { display: block; }
 .stat .v { font-family: var(--font-mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; color: var(--accent); }
 .note { font-size: 0.8rem; color: var(--muted); margin: 0; }
 details.mcset { flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; }
-details.mcset > summary { cursor: pointer; font-family: var(--font-display); font-size: 0.92rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); }
+details.mcset > summary { cursor: pointer; font-family: var(--font-display); font-size: 0.78rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--amber); }
 details.mcset[open] > summary { margin-bottom: 6px; }
 #view-mc .row, #view-mc .stats, #view-mc .note, #view-mc #view-seg { flex: none; margin: 0; }
 
@@ -148,13 +150,13 @@ details.mcset[open] > summary { margin-bottom: 6px; }
 .lstatus.go { border-left-color: var(--good); background: color-mix(in srgb, var(--good) 7%, var(--panel)); }
 .lstatus.caution { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn) 7%, var(--panel)); }
 .lstatus.nogo { border-left-color: var(--bad); background: color-mix(in srgb, var(--bad) 7%, var(--panel)); }
-.lstatus .tag { display: inline-block; font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; letter-spacing: 0.12em; color: #06100a; border-radius: 3px; padding: 0 10px; margin-right: 10px; }
+.lstatus .tag { display: inline-block; font-family: var(--font-display); font-size: 0.85rem; font-weight: 900; letter-spacing: 1px; color: #06100a; border-radius: 3px; padding: 0 10px; margin-right: 10px; }
 .charts.lcharts { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
 .charts.lcharts .chart { grid-column: auto; grid-row: auto; }
 @media (max-aspect-ratio: 1/1) { .charts.lcharts { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
 
 .files { display: grid; gap: 8px; border-top: 1px solid var(--line); padding: 10px 0 12px; }
-.filehead { font-family: var(--font-display); font-size: 0.9rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.filehead { font-family: var(--font-display); font-size: 0.76rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
 .filehead .hint { text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-weight: 400; }
 .filerow { display: grid; gap: 4px; }
 .filerow .row { gap: 4px; }
@@ -178,12 +180,12 @@ details.mcset[open] > summary { margin-bottom: 6px; }
 <body>
 <div class="wrap">
   <div class="topbar">
-    <div class="brand"><h1>Airbrake <span>Guidance</span> Console</h1><small>Kalman filter · apogee predictor · flap controller</small></div>
+    <div class="brand"><h1>Airbrake<span>Guidance Console</span></h1><small>Independent study for BME Suborbitals</small></div>
     <div class="lights" aria-label="System status">
       <span class="light" id="lt-ctrl"><i></i>Airbrake</span>
       <span class="light" id="lt-gnc"><i></i>Tilt-aware</span>
       <span class="light" id="lt-learn"><i></i>Drag learning</span>
-      <span class="light" id="lt-kf"><i></i>Baro lockout</span>
+      <span class="light" id="lt-kf"><i></i>Logger units</span>
       <span class="light" id="lt-data"><i></i>Built-in rocket</span>
     </div>
     <div class="clock" id="clock" aria-label="Local time">--:--:--</div>
@@ -196,7 +198,8 @@ details.mcset[open] > summary { margin-bottom: 6px; }
         <div class="ctrl">
           <label for="preset">Preset</label>
           <select id="preset">
-            <option value="k3">3 km class (default)</option>
+            <option value="eclipse">Eclipse-like (public numbers)</option>
+            <option value="k3">3 km class, generic</option>
             <option value="k3light">3 km class, lighter, shorter burn</option>
             <option value="k9">9 km class, supersonic</option>
             <option value="custom">Custom</option>
@@ -213,6 +216,7 @@ details.mcset[open] > summary { margin-bottom: 6px; }
           <div class="field"><label for="r-flapcd">Flap Cd</label><input id="r-flapcd" type="number" min="0.5" max="2.0" step="any" inputmode="decimal"></div>
           <div class="field"><label for="r-servo">Servo, full travel [s]</label><input id="r-servo" type="number" min="0.1" max="3" step="any" inputmode="decimal"></div>
           <div class="field"><label for="r-gain">Full open at overshoot [m]</label><input id="r-gain" type="number" min="20" max="2000" step="any" inputmode="decimal"></div>
+          <div class="field"><label for="r-floor">Airbrake active above [m]</label><input id="r-floor" type="number" min="0" max="8000" step="any" inputmode="decimal"></div>
         </div>
         <div class="files">
           <div class="filehead">Real data <span class="hint">(optional, replaces the built-in curves)</span></div>
@@ -247,8 +251,8 @@ details.mcset[open] > summary { margin-bottom: 6px; }
           <span>Average thrust</span><span id="d-thr">-</span>
           <span>Max speed</span><span id="d-vmax">-</span>
           <span>Max acceleration</span><span id="d-gmax">-</span>
-          <span>Apogee, flaps closed, no wind</span><span id="d-apo0">-</span>
-          <span>Apogee, flaps fully open, no wind</span><span id="d-apo1">-</span>
+          <span>Logged apogee, closed, 15 °C, calm</span><span id="d-apo0">-</span>
+          <span>Logged apogee, open, 15 °C, calm</span><span id="d-apo1">-</span>
         </div>
         <div class="alert" id="r-alert" hidden></div>
       </details>
@@ -267,6 +271,14 @@ details.mcset[open] > summary { margin-bottom: 6px; }
             <button id="ctrl-on" aria-pressed="true">On</button>
             <button id="ctrl-off" aria-pressed="false">Off</button>
           </div>
+        </div>
+        <div class="ctrl">
+          <span style="font-size:0.9rem">Airbrake aims for</span>
+          <div class="seg" role="group" aria-label="Altitude the airbrake aims for">
+            <button id="units-logger" aria-pressed="true">Logger altitude</button>
+            <button id="units-true" aria-pressed="false">True altitude</button>
+          </div>
+          <small>EuRoC scores the official CATS Vega logger, which assumes a 15 °C day. "Logger altitude" aims for the pressure at which it reads the target.</small>
         </div>
         <div class="ctrl">
           <span style="font-size:0.9rem">Flight computer model</span>
@@ -299,6 +311,11 @@ details.mcset[open] > summary { margin-bottom: 6px; }
           <label for="wind">Wind at 10 m <output id="o-wind"></output></label>
           <input id="wind" type="range" min="-12" max="12" step="1" value="0">
           <small>+ blows downrange (the way the rail tilts), &minus; blows back over the pad. Grows with height.</small>
+        </div>
+        <div class="ctrl">
+          <label for="gtemp">Ground temperature <output id="o-gtemp"></output></label>
+          <input id="gtemp" type="range" min="-5" max="40" step="1" value="21">
+          <small>The official logger assumes 15 °C. October afternoons in Central Portugal average about 21 °C.</small>
         </div>
         <div class="ctrl">
           <label for="drag">Body drag vs model <output id="o-drag"></output></label>
@@ -342,8 +359,8 @@ details.mcset[open] > summary { margin-bottom: 6px; }
 
       <section class="view" id="view-flight" aria-label="This flight">
         <div class="tiles">
-        <div class="tile"><div class="k">Apogee</div><div class="v" id="t-apo">-</div><div class="s" id="t-apo-s"></div></div>
-        <div class="tile"><div class="k">Miss vs target</div><div class="v" id="t-miss">-</div><div class="s" id="t-miss-s"></div></div>
+        <div class="tile"><div class="k">Official logged apogee</div><div class="v" id="t-apo">-</div><div class="s" id="t-apo-s"></div></div>
+        <div class="tile"><div class="k">Scored miss vs target</div><div class="v" id="t-miss">-</div><div class="s" id="t-miss-s"></div></div>
         <div class="tile"><div class="k">Peak flap opening</div><div class="v" id="t-flap">-</div><div class="s" id="t-flap-s"></div></div>
         <div class="tile"><div class="k">Drift at apogee</div><div class="v" id="t-kf">-</div><div class="s" id="t-kf-s"></div></div>
       </div>
@@ -389,7 +406,7 @@ details.mcset[open] > summary { margin-bottom: 6px; }
 
       <section class="view" id="view-mc" hidden aria-label="Monte Carlo">
                 <details class="mcset"><summary>Uncertainty settings</summary>
-        <p class="note">Every flight draws a random real world around the nominal rocket above, using the rail tilt and flight computer settings on the left. Spreads are 1-sigma; wind is uniform in the range shown. Stats count only flights that could reach the target with flaps closed.</p>
+        <p class="note">Every flight draws a random real world around the nominal rocket above, using the rail tilt and flight computer settings on the left. Spreads are 1-sigma; wind is uniform in the range shown. Misses are official logged apogee minus target, counting only flights that could reach the target with flaps closed.</p>
         <div class="mcgrid">
           <div class="ctrl"><label for="s-drag">Body drag spread <output id="o-s-drag"></output></label><input id="s-drag" type="range" min="0" max="20" step="1" value="7"></div>
           <div class="ctrl"><label for="s-imp">Motor impulse spread <output id="o-s-imp"></output></label><input id="s-imp" type="range" min="0" max="10" step="0.5" value="3"></div>
@@ -438,19 +455,19 @@ details.mcset[open] > summary { margin-bottom: 6px; }
         </div>
         <div class="lstatus" id="lt-status"><b>Enter today's conditions and run the check.</b> It flies 150 rockets in today's weather using the rocket on the left and the uncertainty spreads from the Monte Carlo tab.</div>
         <div class="tiles">
-          <div class="tile"><div class="k">Apogee, flaps closed</div><div class="v" id="lt-closed">-</div><div class="s" id="lt-closed-s"></div></div>
+          <div class="tile"><div class="k">Logged apogee, flaps closed</div><div class="v" id="lt-closed">-</div><div class="s" id="lt-closed-s"></div></div>
           <div class="tile"><div class="k">Can reach target</div><div class="v" id="lt-reach">-</div><div class="s">of flights, flaps closed</div></div>
           <div class="tile"><div class="k">Expected landing (95%)</div><div class="v" id="lt-band">-</div><div class="s">vs target, with airbrake</div></div>
           <div class="tile"><div class="k">Wind limit today</div><div class="v" id="lt-limit">-</div><div class="s" id="lt-limit-s">this direction</div></div>
         </div>
         <div class="charts lcharts">
           <div class="chart">
-            <h3>Apogee with flaps closed vs wind [m/s]</h3>
+            <h3>Logged apogee, flaps closed, vs wind [m/s]</h3>
             <div class="legend"><span><i style="background:var(--accent)"></i>Blows downrange</span><span><i style="background:var(--brake)"></i>Blows back over the pad</span><span><i style="background:var(--good);height:2px"></i>Target</span></div>
             <div class="plot"><canvas id="c-lt-wind" aria-label="Apogee vs wind"></canvas></div>
           </div>
           <div class="chart">
-            <h3>Apogee vs rail tilt [deg], today's wind</h3>
+            <h3>Logged apogee vs rail tilt [deg], today's wind</h3>
             <div class="legend"><span><i style="background:var(--accent)"></i>Flaps closed</span><span><i style="background:var(--ghost)"></i>Flaps fully open</span><span><i style="background:var(--good);height:2px"></i>Target</span></div>
             <div class="plot"><canvas id="c-lt-rail" aria-label="Apogee vs rail tilt"></canvas></div>
           </div>
@@ -469,11 +486,12 @@ const MACH = [0, 0.5, 0.8, 0.95, 1.05, 1.2, 2.0, 3.0], CDS0 = [0.45, 0.44, 0.46,
 const SHAPE_T = [0, 0.025, 0.125, 0.75, 0.9, 1.0], SHAPE_F = [0, 1.0, 0.931, 0.862, 0.276, 0];   // thrust curve shape, time as fraction of burn
 
 const PRESETS = {
-  k3:      { dia: 130, cd: 0.45, dry: 18,   prop: 4.5, imp: 7667,  burn: 4.0, flap: 80,  flapcd: 1.2, servo: 0.5, gain: 150, target: 3000 },
-  k3light: { dia: 115, cd: 0.42, dry: 12.5, prop: 3.2, imp: 5600,  burn: 2.6, flap: 60,  flapcd: 1.2, servo: 0.4, gain: 150, target: 3000 },
-  k9:      { dia: 155, cd: 0.40, dry: 32,   prop: 18,  imp: 36000, burn: 6.5, flap: 150, flapcd: 1.2, servo: 0.6, gain: 400, target: 9000 },
+  eclipse: { dia: 140, cd: 0.45, dry: 27.58, prop: 5.42, imp: 9826, burn: 4.13, flap: 100, flapcd: 1.2, servo: 0.5, gain: 150, floor: 900, target: 3000, rail: 6 },
+  k3:      { dia: 130, cd: 0.45, dry: 18,   prop: 4.5, imp: 7667,  burn: 4.0, flap: 80,  flapcd: 1.2, servo: 0.5, gain: 150, floor: 0, target: 3000, rail: 5 },
+  k3light: { dia: 115, cd: 0.42, dry: 12.5, prop: 3.2, imp: 5600,  burn: 2.6, flap: 60,  flapcd: 1.2, servo: 0.4, gain: 150, floor: 0, target: 3000, rail: 5 },
+  k9:      { dia: 155, cd: 0.40, dry: 32,   prop: 18,  imp: 36000, burn: 6.5, flap: 150, flapcd: 1.2, servo: 0.6, gain: 400, floor: 0, target: 9000, rail: 5 },
 };
-const FIELDS = ["dia", "cd", "dry", "prop", "imp", "burn", "flap", "flapcd", "servo", "gain"];
+const FIELDS = ["dia", "cd", "dry", "prop", "imp", "burn", "flap", "flapcd", "servo", "gain", "floor"];
 
 function interp(x, xs, ys) {
   if (x <= xs[0]) return ys[0];
@@ -571,6 +589,15 @@ function fly(R, w, opt) {
   // what the flight computer believes about the air: standard atmosphere unless it was given today's pad readings
   const cT0 = opt.cT0 || 288.15, cP0 = opt.cP0 || 101325;
   const isaC = h => { const T = Math.max(216.65, cT0 - 0.0065*h), pr = cP0*Math.pow(T/cT0, 5.2561); return [pr/(287.05*T), Math.sqrt(1.4*287.05*T)]; };
+  // Official EuRoC logger (CATS Vega firmware): fixed 15 C, relative to the pad
+  const catsH = q => -(Math.pow(q / 101250, 1 / 5.257) - 1) * 288.15 / 0.0065;
+  // the flight computer's own pressure-to-height conversion (measured pad temperature, standard lapse)
+  const T0e0 = T0 + w.padT, hMeas = q => T0e0 / 0.0065 * (1 - Math.pow(q / P0, 1 / 5.2561));
+  let tgt = opt.target;
+  if (opt.logger && isFinite(opt.target)) {   // aim for the pressure at which the logger reads the target
+    const pT = 101250 * Math.pow(1 - (opt.target + catsH(P0)) * 0.0065 / 288.15, 5.257);
+    tgt = hMeas(pT);
+  }
   const windAt = z => w.wind * Math.pow(Math.max(z, 2) / 10, 1/7);
   const mass = t => dry + R.prop * (1 - R.burned(t));
   const out = new Float64Array(8);   // dx, dz, ax, az, pitch, mach, onRail, airspeed
@@ -634,7 +661,7 @@ function fly(R, w, opt) {
       if (t > R.burn + 0.2 && ve > 0 && i % 5 === 0) {
         if (opt.tilt) { const pc = Math.min(Math.PI - 0.2, Math.max(0.2, pm)); pred = predict2d(R, he, ve, ve / Math.tan(pc), opt.learn ? sb : 1, isaC); }
         else pred = predict1d(R, he, ve, opt.learn ? sb : 1, isaC);
-        uc = Math.min(1, Math.max(0, R.kp * (pred - opt.target)));
+        uc = he >= (R.floor || 0) ? Math.min(1, Math.max(0, R.kp * (pred - tgt))) : 0;
       }
       if (ve <= 0) uc = 0;
       const st = DT / (R.servo * w.servo); u += Math.max(-st, Math.min(st, uc - u));
@@ -644,7 +671,7 @@ function fly(R, w, opt) {
     if (log && i % 5 === 0) log.push([t, z, u, (opt.ctrl && t > R.burn + 0.2) ? pred : NaN, x, pitch, Va1, mach, skip ? 1 : 0, rail1, he]);
     i++;
   }
-  return { apogee: hmax, drift: xAtMax, log, vmax, amax, umax };
+  return { apogee: hmax, logged: catsH(atm(hmax)[0]) - catsH(P0), tgtTrue: tgt, drift: xAtMax, log, vmax, amax, umax };
 }
 
 
@@ -726,11 +753,11 @@ function loadText(kind, text, label) {
 }
 
 // ---------------- state and inputs ----------------
-const state = { ctrl: true, lockout: true, tilt: true, learn: true, seed: 7, n: 300, view: "miss" };
+const state = { ctrl: true, lockout: true, tilt: true, learn: true, units: true, seed: 7, n: 300, view: "miss" };
 let R = null, last = null, mc = null;
-const WORLD0 = { wind: 0, drag: 0, imp: 0, mass: 0, padT: 0, trans: 120, bias: 0.15 };
+const WORLD0 = { wind: 0, gtemp: 21, drag: 0, imp: 0, mass: 0, padT: 0, trans: 120, bias: 0.15 };
 const railRad = () => Math.min(15, Math.max(0, parseFloat($("rail").value) || 0)) * Math.PI / 180;
-const flightOpts = extra => ({ lockout: state.lockout, tilt: state.tilt, learn: state.learn, rail: railRad(), ...extra });
+const flightOpts = extra => ({ lockout: state.lockout, tilt: state.tilt, learn: state.learn, logger: state.units, rail: railRad(), ...extra });
 const fmtS = (v, d = 0) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d);
 const fmtM = v => Math.round(v).toLocaleString("en") + " m";
 
@@ -741,13 +768,14 @@ function readRocket() {
   if (files.drag) r.dragCurve = files.drag;
   return r;
 }
-function setRocket(p) { FIELDS.forEach(f => $("r-" + f).value = p[f]); $("target").value = p.target; }
+function setRocket(p) { FIELDS.forEach(f => $("r-" + f).value = p[f]); $("target").value = p.target; if (p.rail !== undefined) $("rail").value = p.rail; }
 function world() {
   return { drag: 1 + $("drag").value/100, imp: 1 + $("imp").value/100, mass: 1 + $("mass").value/100, flapcd: 1,
-           bias: +$("bias").value, dT: 0, padT: +$("padT").value, trans: +$("trans").value, transMach: 0.9, servo: 1, wind: +$("wind").value };
+           bias: +$("bias").value, dT: +$("gtemp").value - 15, padT: +$("padT").value, trans: +$("trans").value, transMach: 0.9, servo: 1, wind: +$("wind").value };
 }
 function labels() {
   $("o-wind").textContent = fmtS(+$("wind").value) + " m/s";
+  $("o-gtemp").textContent = $("gtemp").value + " °C";
   $("o-s-wind").textContent = "\u00b1" + $("s-wind").value + " m/s";
   $("o-drag").textContent = fmtS(+$("drag").value) + "%";
   $("o-imp").textContent = fmtS(+$("imp").value) + "%";
@@ -772,7 +800,7 @@ function statusLights() {
   light("lt-ctrl", state.ctrl ? "on" : "off", state.ctrl ? "Airbrake armed" : "Airbrake off");
   light("lt-gnc", state.tilt ? "on" : "warn", state.tilt ? "Tilt-aware" : "1-D model");
   light("lt-learn", state.learn ? "on" : "warn", state.learn ? "Drag learning" : "No learning");
-  light("lt-kf", state.lockout ? "on" : "warn", state.lockout ? "Baro lockout" : "Trusting baro");
+  light("lt-kf", state.units ? "on" : "warn", state.units ? "Aims for logger" : "Aims for true alt");
   light("lt-data", files.motor || files.drag ? "on" : "", files.motor || files.drag ? "Real data loaded" : "Built-in rocket");
 }
 function syncTopbar() { document.documentElement.style.setProperty("--tb", document.querySelector(".topbar").offsetHeight + "px"); }
@@ -792,22 +820,22 @@ function run() {
   $("d-thr").textContent = Math.round(R.fAvg).toLocaleString("en") + " N";
   $("d-vmax").textContent = Math.round(closed.vmax) + " m/s (M" + (closed.vmax / 340.3).toFixed(2) + ")";
   $("d-gmax").textContent = (closed.amax / G0).toFixed(1) + " g";
-  $("d-apo0").textContent = fmtM(closed.apogee);
-  $("d-apo1").textContent = fmtM(open.apogee);
+  $("d-apo0").textContent = fmtM(closed.logged);
+  $("d-apo1").textContent = fmtM(open.logged);
   const warn = [];
   if (tw < 5) warn.push(`Thrust-to-weight is ${tw.toFixed(1)}. Rockets usually need at least 5 to leave the rail with enough speed to be stable.`);
-  if (closed.apogee < target) warn.push(`Even with flaps closed the rocket only reaches ${fmtM(closed.apogee)}. An airbrake can only remove height, so lower the target or add impulse.`);
-  else if (open.apogee > target) warn.push(`Even with flaps fully open the rocket reaches ${fmtM(open.apogee)}. Add flap area or lower the impulse.`);
-  else if (closed.apogee - target < 0.05 * target) warn.push(`Only ${fmtM(closed.apogee - target)} of overshoot margin. A slightly weak motor will fall short. Teams usually design 10-20% above target.`);
+  if (closed.logged < target) warn.push(`Even with flaps closed the rocket only reaches ${fmtM(closed.logged)}. An airbrake can only remove height, so lower the target or add impulse.`);
+  else if (open.logged > target) warn.push(`Even with flaps fully open the rocket reaches ${fmtM(open.logged)}. Add flap area or lower the impulse.`);
+  else if (closed.logged - target < 0.05 * target) warn.push(`Only ${fmtM(closed.logged - target)} of overshoot margin on a 15 °C day; a hot day or a weak motor can leave the airbrake nothing to remove. Teams usually design 10-20% above target.`);
   $("r-alert").hidden = !warn.length; $("r-alert").textContent = warn.join(" ");
 
   const w = world();
   const res = fly(R, w, flightOpts({ ctrl: state.ctrl, target, seed: state.seed, record: true }));
   const ghost = fly(R, w, flightOpts({ ctrl: false, target, seed: state.seed, record: true }));
-  last = { res, ghost, target, wind: w.wind };
-  const miss = res.apogee - target;
-  $("t-apo").textContent = fmtM(res.apogee);
-  $("t-apo-s").textContent = "No airbrake: " + fmtM(ghost.apogee);
+  last = { res, ghost, target, tgtTrue: res.tgtTrue, wind: w.wind };
+  const miss = res.logged - target;
+  $("t-apo").textContent = fmtM(res.logged);
+  $("t-apo-s").textContent = `True height ${fmtM(res.apogee)} · no airbrake ${fmtM(ghost.logged)}`;
   $("t-miss").textContent = fmtS(miss, 1) + " m";
   $("t-miss-s").innerHTML = pill(miss);
   $("t-flap").textContent = Math.round(res.umax * 100) + "%";
@@ -849,7 +877,7 @@ function dashed(g, x0, x1, y, X, Y) { g.setLineDash([4, 4]); line(g, [[x0, y], [
 
 function draw() {
   if (!last) return;
-  const { res, ghost, target } = last;
+  const { res, ghost } = last, target = last.tgtTrue;
   let [g, w, h] = setup($("c-alt"));
   const tmax = Math.ceil(Math.max(res.log.at(-1)[0], ghost.log.at(-1)[0]));
   const ymax = Math.max(ghost.apogee, res.apogee, target) * 1.08;
@@ -925,7 +953,7 @@ function drawRocket(g, px, py, pitch, u, burning, scale) {
 }
 function drawReplay() {
   if ($("view-replay").hidden || !last) return;
-  const { res, ghost, target, wind } = last, log = res.log, tEnd = log[log.length - 1][0];
+  const { res, ghost, wind } = last, target = last.tgtTrue, log = res.log, tEnd = log[log.length - 1][0];
   rp.t = Math.min(Math.max(rp.t, 0), tEnd);
   const S = sampleAt(log, rp.t);
   const [g, w, h] = setup($("c-replay"));
@@ -943,7 +971,7 @@ function drawReplay() {
   g.fillStyle = css("--muted"); g.textAlign = "center"; g.textBaseline = "top"; g.fillText("pad", X(0), Y(0) + 4);
   // target
   g.setLineDash([6, 5]); g.strokeStyle = css("--good"); g.lineWidth = 1.5; g.beginPath(); g.moveTo(pad.l, Y(target)); g.lineTo(w - pad.r, Y(target)); g.stroke(); g.setLineDash([]);
-  g.fillStyle = css("--good"); g.textAlign = "left"; g.textBaseline = "bottom"; g.font = "12px " + css("--font-body"); g.fillText("Target " + Math.round(target).toLocaleString("en") + " m", pad.l + 6, Y(target) - 3);
+  g.fillStyle = css("--good"); g.textAlign = "left"; g.textBaseline = "bottom"; g.font = "12px " + css("--font-body"); g.fillText(state.units ? `Logger ${Math.round(last.target).toLocaleString("en")} m = true ${Math.round(target).toLocaleString("en")} m today` : "Target " + Math.round(target).toLocaleString("en") + " m", pad.l + 6, Y(target) - 3);
   // wind profile arrows on the right
   if (wind) {
     g.strokeStyle = css("--muted"); g.fillStyle = css("--muted"); g.lineWidth = 1.5;
@@ -966,7 +994,7 @@ function drawReplay() {
   if (rp.t >= top[0] - 0.05) {
     g.fillStyle = css("--accent"); g.beginPath(); g.arc(X(top[4]), Y(top[1]), 5, 0, 7); g.fill();
     g.textAlign = "left"; g.textBaseline = "bottom"; g.fillStyle = css("--ink"); g.font = "600 13px " + css("--font-body");
-    g.fillText(`Apogee ${Math.round(top[1]).toLocaleString("en")} m (${fmtS(top[1] - target, 1)} m)`, X(top[4]) + 10, Y(top[1]) - 6);
+    g.fillText(`Logged ${Math.round(res.logged).toLocaleString("en")} m (${fmtS(res.logged - last.target, 1)} m)`, X(top[4]) + 10, Y(top[1]) - 6);
   }
   drawRocket(g, X(S[4]), Y(S[1]), S[5], S[2], S[0] < R.burn, Math.min(1.2, Math.max(0.7, h / 500)));
   // readouts
@@ -1011,8 +1039,8 @@ function runLaunch() {
   const btn = $("lt-run"); btn.disabled = true;
   const base = { drag: 1, imp: 1, mass: 1, flapcd: 1, bias: 0, dT: L.T - 15, padT: 0, trans: 0, transMach: 0.9, servo: 1, wind: L.wind, p0: L.p };
   const T0 = 288.15 + base.dT;
-  const closedAt = (wnd, rail) => fly(Rr, { ...base, wind: wnd }, { ctrl: false, rail, seed: 1 }).apogee;
-  const openAt = (wnd, rail) => fly(Rr, { ...base, wind: wnd }, { ctrl: false, rail, seed: 1, fixedU: 0, openAfter: 1 }).apogee;
+  const closedAt = (wnd, rail) => fly(Rr, { ...base, wind: wnd }, { ctrl: false, rail, seed: 1 }).logged;
+  const openAt = (wnd, rail) => fly(Rr, { ...base, wind: wnd }, { ctrl: false, rail, seed: 1, fixedU: 0, openAfter: 1 }).logged;
   const res = { L, target, winds: [], down: [], back: [], rails: [], rClosed: [], rOpen: [] };
   res.closed = closedAt(L.wind, L.rail); res.open = openAt(L.wind, L.rail);
   for (let wv = 0; wv <= 16; wv += 1) { res.winds.push(wv); res.down.push(closedAt(wv, L.rail)); res.back.push(closedAt(-wv, L.rail)); }
@@ -1027,10 +1055,10 @@ function runLaunch() {
       const wv = { ...base, drag: Math.max(0.5, 1 + sd.drag*rnd.n()), imp: Math.max(0.5, 1 + sd.imp*rnd.n()), mass: Math.max(0.5, 1 + sd.mass*rnd.n()),
                    flapcd: Math.max(0.2, 1 + sd.flap*rnd.n()), bias: sd.bias*rnd.n(), padT: padErr, trans: 60 + 120*rnd.u(), transMach: 0.85 + 0.1*rnd.u(),
                    servo: 0.8 + 0.6*rnd.u(), wind: L.wind * (1 + 0.25 * rnd.n()) };
-      const c = fly(Rr, wv, { ctrl: false, rail: L.rail, seed: 2000 + k }).apogee;
-      const o = fly(Rr, wv, { ctrl: false, rail: L.rail, seed: 2000 + k, fixedU: 0, openAfter: 1 }).apogee;
+      const c = fly(Rr, wv, { ctrl: false, rail: L.rail, seed: 2000 + k }).logged;
+      const o = fly(Rr, wv, { ctrl: false, rail: L.rail, seed: 2000 + k, fixedU: 0, openAfter: 1 }).logged;
       // the flight computer is told today's pad readings (its temperature reading has the sensor error)
-      const f = fly(Rr, wv, flightOpts({ ctrl: true, target, rail: L.rail, seed: 2000 + k, cT0: T0 + padErr, cP0: L.p })).apogee;
+      const f = fly(Rr, wv, flightOpts({ ctrl: true, target, rail: L.rail, seed: 2000 + k, cT0: T0 + padErr, cP0: L.p })).logged;
       cl.push(c); op.push(o); if (c >= target) miss.push(f - target);
     }
     $("lt-status").textContent = `Flying today's rockets… ${k} / ${N}`;
@@ -1173,8 +1201,8 @@ function runMC() {
       const p = { drag: Math.max(0.5, 1 + sd.drag*rnd.n()), imp: Math.max(0.5, 1 + sd.imp*rnd.n()), mass: Math.max(0.5, 1 + sd.mass*rnd.n()), flapcd: Math.max(0.2, 1 + sd.flap*rnd.n()),
                   bias: sd.bias*rnd.n(), dT: -10 + 25*rnd.u(), padT: sd.padT*rnd.n(), trans: 60 + 120*rnd.u(), transMach: 0.85 + 0.1*rnd.u(), servo: 0.8 + 0.6*rnd.u(),
                   wind: sd.wind * (2*rnd.u() - 1) };
-      const on = fly(Rr, p, { ...optsC, seed: 1000 + k }).apogee;
-      const off = fly(Rr, p, { ...optsU, seed: 1000 + k }).apogee;
+      const on = fly(Rr, p, { ...optsC, seed: 1000 + k }).logged;
+      const off = fly(Rr, p, { ...optsU, seed: 1000 + k }).logged;
       out.allParams.push(p); out.on.push(on); out.off.push(off);
     }
     $("mc-status").textContent = `Flying… ${k} / ${N}`;
@@ -1213,13 +1241,14 @@ function seg(onId, offId, key) {
 seg("ctrl-on", "ctrl-off", "ctrl");
 seg("kf-lock", "kf-plain", "lockout");
 seg("tilt-on", "tilt-off", "tilt");
+seg("units-logger", "units-true", "units");
 seg("learn-on", "learn-off", "learn");
 $("rail").addEventListener("input", () => { clearMC("Rail tilt changed. Fly again."); later(run); });
 document.querySelectorAll("#n-seg button").forEach(b => b.onclick = () => { state.n = +b.dataset.n; document.querySelectorAll("#n-seg button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
 document.querySelectorAll("#view-seg button").forEach(b => b.onclick = () => { state.view = b.dataset.v; document.querySelectorAll("#view-seg button").forEach(x => x.setAttribute("aria-pressed", x === b)); drawMC(); });
 let pending = 0;
 const later = fn => { cancelAnimationFrame(pending); pending = requestAnimationFrame(fn); };
-["wind", "drag", "imp", "mass", "padT", "trans", "bias"].forEach(id => $(id).addEventListener("input", () => { labels(); later(run); }));
+["wind", "gtemp", "drag", "imp", "mass", "padT", "trans", "bias"].forEach(id => $(id).addEventListener("input", () => { labels(); later(run); }));
 ["s-drag", "s-imp", "s-mass", "s-flap", "s-padT", "s-bias", "s-wind"].forEach(id => $(id).addEventListener("input", labels));
 FIELDS.forEach(f => $("r-" + f).addEventListener("input", () => { $("preset").value = "custom"; clearMC("Rocket changed. Fly again."); later(run); }));
 $("target").addEventListener("input", () => { clearMC("Target changed. Fly again."); later(run); });
@@ -1250,7 +1279,7 @@ if (window.ResizeObserver) new ResizeObserver(() => later(draw)).observe(documen
 window.addEventListener("resize", () => later(draw));
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
 new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-setRocket(PRESETS.k3);
+setRocket(PRESETS.eclipse);
 run();
 </script>
 </body>

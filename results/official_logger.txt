@@ -1,0 +1,17 @@
+1) Logger reading of a TRUE 3,000 m (standard lapse 6.5 K/km):
+   ground  5 C: logged   3106 m | true height for a logged 3,000 m:   2898 m
+   ground 10 C: logged   3051 m | true height for a logged 3,000 m:   2950 m
+   ground 15 C: logged   2998 m | true height for a logged 3,000 m:   3002 m
+   ground 20 C: logged   2947 m | true height for a logged 3,000 m:   3054 m
+   ground 25 C: logged   2897 m | true height for a logged 3,000 m:   3106 m
+   ground 30 C: logged   2850 m | true height for a logged 3,000 m:   3158 m
+   ground 35 C: logged   2803 m | true height for a logged 3,000 m:   3210 m
+2) Nominal rocket, calm, perfect pad sensor - LOGGED miss by ground temperature:
+   Aims for true 3,000 m                 5C:+110.9  10C: +56.0  15C:  +2.9  20C: -48.4  25C: -97.9  30C:-145.8  35C:-192.1
+   Library formula (15 C, 1013 hPa)      5C:-142.5  10C: -74.6  15C:  +5.8  20C: +35.4  25C: +38.0  30C: +13.5  35C: -22.0
+   Aims for the logger's 3,000 m         5C:  +5.8  10C:  +5.3  15C:  +4.9  20C:  +4.5  25C:  +3.8  30C:  +2.1  35C: -22.0
+3) Monte Carlo: 240 flights, 139 could reach a logged 3,000 m with flaps closed
+   Aims for true 3,000 m                mean  -61.6 m | 1 sigma  55.1 m | 95%  -148/  +34 m | within 25 m 21.6% | -10.2 m per C
+   Library formula (15 C, 1013 hPa)     mean  +30.5 m | 1 sigma  31.3 m | 95%   -23/  +91 m | within 25 m 44.6% | +5.1 m per C
+   Aims for the logger's 3,000 m        mean   -2.3 m | 1 sigma  15.3 m | 95%   -33/  +19 m | within 25 m 91.4% | -0.3 m per C
+saved results/official_logger.json
