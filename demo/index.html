@@ -66,6 +66,34 @@ select { font-family: var(--font-body); }
 .derived { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 0.82rem; border-top: 1px solid var(--line); padding-top: 10px; }
 .derived span:nth-child(odd) { color: var(--muted); }
 .derived span:nth-child(even) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.rtiles { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.rtile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.rtile .k { font-size: 0.72rem; color: var(--muted); }
+.rtile .v { font-family: var(--font-mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rtile .v.phase { font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; white-space: normal; }
+.rtile.wide { grid-column: span 2; }
+.rcontrols { flex: none; flex-wrap: nowrap; }
+.rcontrols .btn { min-width: 84px; }
+#rp-scrub { flex: 1; min-width: 80px; }
+.lin { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px 10px; align-items: end; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.lstatus { flex: none; border-radius: 10px; padding: 9px 14px; font-size: 0.9rem; border: 1px solid var(--line); background: var(--panel); border-left: 6px solid var(--muted); }
+.lstatus.go { border-left-color: var(--good); } .lstatus.caution { border-left-color: var(--warn); } .lstatus.nogo { border-left-color: var(--bad); }
+.lstatus .tag { display: inline-block; font-weight: 700; color: #fff; border-radius: 6px; padding: 1px 8px; margin-right: 8px; }
+.charts.lcharts { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.charts.lcharts .chart { grid-column: auto; grid-row: auto; }
+@media (max-aspect-ratio: 1/1) { .charts.lcharts { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
+.files { display: grid; gap: 8px; border-top: 1px solid var(--line); padding: 10px 0 12px; }
+.filehead { font-size: 0.85rem; font-weight: 600; }
+.filerow { display: grid; gap: 4px; }
+.filerow .row { gap: 4px; }
+.fk { font-size: 0.78rem; color: var(--muted); }
+.fv { font-family: var(--font-mono); font-size: 0.82rem; overflow-wrap: anywhere; }
+.btn.small { padding: 5px 10px; font-size: 0.82rem; }
+.btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-left: 2px; padding-right: 2px; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+label.btn { display: inline-block; }
+#file-help p { margin: 4px 0; }
+.field input[readonly] { opacity: 0.65; }
 .alert { margin-top: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.82rem; border-left: 3px solid var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .alert[hidden] { display: none; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
@@ -157,6 +185,34 @@ canvas { display: block; }
           <div class="field"><label for="r-flapcd">Flap Cd</label><input id="r-flapcd" type="number" min="0.5" max="2.0" step="any" inputmode="decimal"></div>
           <div class="field"><label for="r-servo">Servo, full travel [s]</label><input id="r-servo" type="number" min="0.1" max="3" step="any" inputmode="decimal"></div>
           <div class="field"><label for="r-gain">Full open at overshoot [m]</label><input id="r-gain" type="number" min="20" max="2000" step="any" inputmode="decimal"></div>
+        </div>
+        <div class="files">
+          <div class="filehead">Real data <span class="hint">(optional, replaces the built-in curves)</span></div>
+          <div class="filerow">
+            <div><div class="fk">Motor thrust curve</div><div class="fv" id="motor-name">Built-in shape</div></div>
+            <div class="row">
+              <label class="btn small secondary" for="f-motor">Load .eng</label>
+              <input class="vh" id="f-motor" type="file">
+              <button class="btn small link" id="x-motor" hidden>Remove</button>
+            </div>
+          </div>
+          <div class="filerow">
+            <div><div class="fk">Drag coefficient vs Mach</div><div class="fv" id="drag-name">Built-in curve</div></div>
+            <div class="row">
+              <label class="btn small secondary" for="f-drag">Load .csv</label>
+              <input class="vh" id="f-drag" type="file">
+              <button class="btn small link" id="x-drag" hidden>Remove</button>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between">
+            <button class="btn small link" id="samples">Try sample files</button>
+            <button class="btn small link" id="file-help-btn" aria-expanded="false">Which files?</button>
+          </div>
+          <div class="hint" id="file-help" hidden>
+            <p><b>Motor:</b> any RASP .eng file, the standard format on thrustcurve.org and in OpenRocket. Propellant mass is read from the file.</p>
+            <p><b>Drag:</b> a CSV with Mach and drag coefficient. From OpenRocket: run a simulation, choose Export data, tick Mach number and Drag coefficient. From RocketPy: the two-column mach,cd drag file. Readings are averaged into Mach bins.</p>
+          </div>
+          <div class="alert" id="file-alert" hidden></div>
         </div>
         <div class="derived" aria-live="polite">
           <span>Liftoff thrust / weight</span><span id="d-tw">-</span>
@@ -251,7 +307,9 @@ canvas { display: block; }
     <main class="main">
       <div class="seg tabs" role="tablist" aria-label="View">
         <button id="tab-flight" role="tab" aria-pressed="true">This flight</button>
+        <button id="tab-replay" role="tab" aria-pressed="false">Replay</button>
         <button id="tab-mc" role="tab" aria-pressed="false">Monte Carlo</button>
+        <button id="tab-launch" role="tab" aria-pressed="false">Launch day</button>
       </div>
 
       <section class="view" id="view-flight" aria-label="This flight">
@@ -277,6 +335,27 @@ canvas { display: block; }
             <div class="legend"><span><i style="background:var(--accent)"></i>Predicted apogee if flaps close now [m, left]</span><span><i style="background:var(--brake)"></i>Flap opening [%, right]</span></div>
             <div class="plot"><canvas id="c-ctl" aria-label="Predicted apogee and flap opening"></canvas></div>
           </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-replay" hidden aria-label="Flight replay">
+        <div class="rtiles">
+          <div class="rtile"><div class="k">Time</div><div class="v" id="rp-t">-</div></div>
+          <div class="rtile"><div class="k">Altitude</div><div class="v" id="rp-h">-</div></div>
+          <div class="rtile"><div class="k">Airspeed</div><div class="v" id="rp-v">-</div></div>
+          <div class="rtile"><div class="k">Flaps</div><div class="v" id="rp-u">-</div></div>
+          <div class="rtile"><div class="k">Predicted apogee</div><div class="v" id="rp-p">-</div></div>
+          <div class="rtile wide"><div class="k">Phase</div><div class="v phase" id="rp-ph">-</div></div>
+        </div>
+        <div class="plot card"><canvas id="c-replay" aria-label="Animated side view of the flight"></canvas></div>
+        <div class="row rcontrols">
+          <button class="btn" id="rp-play" aria-label="Play">Play</button>
+          <div class="seg" role="group" aria-label="Replay speed" id="rp-speed">
+            <button data-s="1" aria-pressed="false">1x</button>
+            <button data-s="2" aria-pressed="true">2x</button>
+            <button data-s="5" aria-pressed="false">5x</button>
+          </div>
+          <input id="rp-scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="Replay time">
         </div>
       </section>
 
@@ -318,6 +397,37 @@ canvas { display: block; }
         <p class="note" id="view-note"></p>
         <div class="plot card"><canvas id="c-mc" aria-label="Monte Carlo results"></canvas></div>
       </section>
+
+      <section class="view" id="view-launch" hidden aria-label="Launch day check">
+        <div class="lin">
+          <div class="field"><label for="lt-wind">Wind at 10 m [m/s]</label><input id="lt-wind" type="number" min="0" max="20" step="any" value="5" inputmode="decimal"></div>
+          <div class="field"><label for="lt-dir">Wind direction</label><select id="lt-dir"><option value="1">Blows downrange</option><option value="-1">Blows back over the pad</option></select></div>
+          <div class="field"><label for="lt-temp">Ground temp [°C]</label><input id="lt-temp" type="number" min="-30" max="50" step="any" value="22" inputmode="decimal"></div>
+          <div class="field"><label for="lt-press">Ground pressure [hPa]</label><input id="lt-press" type="number" min="850" max="1080" step="any" value="1005" inputmode="decimal"></div>
+          <div class="field"><label for="lt-rail">Rail tilt [deg]</label><input id="lt-rail" type="number" min="0" max="15" step="any" value="5" inputmode="decimal"></div>
+          <div class="field"><label for="lt-acc">Pad temp sensor accuracy [±K]</label><input id="lt-acc" type="number" min="0" max="5" step="any" value="1" inputmode="decimal"></div>
+          <button class="btn" id="lt-run">Run launch check</button>
+        </div>
+        <div class="lstatus" id="lt-status"><b>Enter today's conditions and run the check.</b> It flies 150 rockets in today's weather using the rocket on the left and the uncertainty spreads from the Monte Carlo tab.</div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Apogee, flaps closed</div><div class="v" id="lt-closed">-</div><div class="s" id="lt-closed-s"></div></div>
+          <div class="tile"><div class="k">Can reach target</div><div class="v" id="lt-reach">-</div><div class="s">of flights, flaps closed</div></div>
+          <div class="tile"><div class="k">Expected landing (95%)</div><div class="v" id="lt-band">-</div><div class="s">vs target, with airbrake</div></div>
+          <div class="tile"><div class="k">Wind limit today</div><div class="v" id="lt-limit">-</div><div class="s" id="lt-limit-s">this direction</div></div>
+        </div>
+        <div class="charts lcharts">
+          <div class="chart">
+            <h3>Apogee with flaps closed vs wind [m/s]</h3>
+            <div class="legend"><span><i style="background:var(--accent)"></i>Blows downrange</span><span><i style="background:var(--brake)"></i>Blows back over the pad</span><span><i style="background:var(--good);height:2px"></i>Target</span></div>
+            <div class="plot"><canvas id="c-lt-wind" aria-label="Apogee vs wind"></canvas></div>
+          </div>
+          <div class="chart">
+            <h3>Apogee vs rail tilt [deg], today's wind</h3>
+            <div class="legend"><span><i style="background:var(--accent)"></i>Flaps closed</span><span><i style="background:var(--ghost)"></i>Flaps fully open</span><span><i style="background:var(--good);height:2px"></i>Target</span></div>
+            <div class="plot"><canvas id="c-lt-rail" aria-label="Apogee vs rail tilt"></canvas></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
   <p class="note">2-D point-mass simulation: off the rail the rocket aligns instantly with the relative wind, a worst case for weathercocking; no gusts. Body Cd follows a typical Mach curve scaled to the subsonic value entered. Supersonic barometer errors are not modelled, so 9 km results are optimistic. Built as a portfolio project by A. E. M. Estiuk Ahmed.</p>
@@ -345,17 +455,24 @@ function interp(x, xs, ys) {
 function isa(h) { const T = Math.max(216.65, 288.15 - 0.0065*h), p = 101325*Math.pow(T/288.15, 5.2561); return [p/(287.05*T), Math.sqrt(1.4*287.05*T)]; }
 
 // Build everything that depends on the nominal rocket
+function trapz(xs, ys) { let s = 0; for (let i = 1; i < xs.length; i++) s += 0.5 * (ys[i] + ys[i-1]) * (xs[i] - xs[i-1]); return s; }
 function buildRocket(r) {
   const area = Math.PI * Math.pow(r.dia / 2000, 2);
-  const shapeImp = (() => { let s = 0; for (let i = 1; i < SHAPE_T.length; i++) s += 0.5*(SHAPE_F[i]+SHAPE_F[i-1])*(SHAPE_T[i]-SHAPE_T[i-1]); return s; })();
-  const fPeak = r.imp / (shapeImp * r.burn);
-  const thrust = t => t >= r.burn ? 0 : fPeak * interp(t / r.burn, SHAPE_T, SHAPE_F);
+  let thrust;
+  if (r.motor) {                       // real thrust curve from a .eng file
+    const mt = r.motor.t, mf = r.motor.f;
+    r = { ...r, burn: mt[mt.length - 1], imp: trapz(mt, mf) };
+    thrust = t => t >= r.burn ? 0 : interp(t, mt, mf);
+  } else {                             // built-in curve shape scaled to the entered impulse and burn time
+    const shapeImp = trapz(SHAPE_T, SHAPE_F), fPeak = r.imp / (shapeImp * r.burn);
+    thrust = t => t >= r.burn ? 0 : fPeak * interp(t / r.burn, SHAPE_T, SHAPE_F);
+  }
   const n = 400, cum = new Float64Array(n + 1);
   for (let i = 1; i <= n; i++) { const t0 = (i-1)/n*r.burn, t1 = i/n*r.burn; cum[i] = cum[i-1] + 0.5*(thrust(t0)+thrust(t1))*(t1-t0); }
   for (let i = 0; i <= n; i++) cum[i] /= cum[n];
   const burned = t => { if (t >= r.burn) return 1; const x = t / r.burn * n, i = Math.floor(x); return cum[i] + (cum[Math.min(i+1, n)] - cum[i]) * (x - i); };
-  const cdScale = r.cd / 0.45;
-  const cd = m => cdScale * interp(m, MACH, CDS0);
+  const cdScale = r.cd / 0.45, dc = r.dragCurve;
+  const cd = dc ? (m => interp(m, dc.m, dc.cd)) : (m => cdScale * interp(m, MACH, CDS0));
   return { ...r, area, thrust, burned, cd, flapA: r.flap / 1e4, kp: 1 / r.gain, fAvg: r.imp / r.burn };
 }
 
@@ -367,10 +484,10 @@ function rng(seed) {
 }
 
 // Onboard predictors: nominal rocket, flaps closed from now on, body drag scaled by s
-function predict1d(R, h, v, s) {
+function predict1d(R, h, v, s, isaF = isa) {
   const dt = 0.1;
   while (v > 0) {
-    const [rho, a] = isa(Math.max(h, 0));
+    const [rho, a] = isaF(Math.max(h, 0));
     const acc = -G0 - 0.5 * rho * s * R.cd(v / a) * R.area * v * v / R.dry;
     const vn = v + acc * dt;
     if (vn <= 0) { h += v * v / (2 * -acc); break; }
@@ -379,10 +496,10 @@ function predict1d(R, h, v, s) {
   return h;
 }
 // Tilted path in still air: drag acts along the velocity vector
-function predict2d(R, h, vz, vx, s) {
+function predict2d(R, h, vz, vx, s, isaF = isa) {
   const dt = 0.1;
   while (vz > 0) {
-    const [rho, a] = isa(Math.max(h, 0));
+    const [rho, a] = isaF(Math.max(h, 0));
     const V = Math.hypot(vx, vz), k = 0.5 * rho * s * R.cd(V / a) * R.area * V / R.dry;
     const az = -G0 - k * vz, ax = -k * vx, vzn = vz + az * dt;
     if (vzn <= 0) { h += vz * vz / (2 * -az); break; }
@@ -421,10 +538,14 @@ const RAIL_LEN = 6, GYRO_N = 0.5 * Math.PI / 180, FORGET = 0.995, PRIOR_SD = 0.1
 function fly(R, w, opt) {
   const rnd = rng(opt.seed), T0 = 288.15 + w.dT, T0e = T0 + w.padT, dry = R.dry * w.mass, rail = opt.rail || 0;
   const sr = Math.sin(rail), cr = Math.cos(rail);
-  const atm = h => { const T = Math.max(216.65, T0 - 0.0065*h), pr = 101325*Math.pow(T/T0, 5.2561); return [pr, pr/(287.05*T), Math.sqrt(1.4*287.05*T)]; };
+  const P0 = w.p0 || 101325;
+  const atm = h => { const T = Math.max(216.65, T0 - 0.0065*h), pr = P0*Math.pow(T/T0, 5.2561); return [pr, pr/(287.05*T), Math.sqrt(1.4*287.05*T)]; };
+  // what the flight computer believes about the air: standard atmosphere unless it was given today's pad readings
+  const cT0 = opt.cT0 || 288.15, cP0 = opt.cP0 || 101325;
+  const isaC = h => { const T = Math.max(216.65, cT0 - 0.0065*h), pr = cP0*Math.pow(T/cT0, 5.2561); return [pr/(287.05*T), Math.sqrt(1.4*287.05*T)]; };
   const windAt = z => w.wind * Math.pow(Math.max(z, 2) / 10, 1/7);
   const mass = t => dry + R.prop * (1 - R.burned(t));
-  const out = new Float64Array(7);   // dx, dz, ax, az, pitch, mach, onRail
+  const out = new Float64Array(8);   // dx, dz, ax, az, pitch, mach, onRail, airspeed
   function deriv(t, x, z, vx, vz, u) {
     const thr = w.imp * R.thrust(t), m = mass(t);
     const onRail = Math.hypot(x, z) < RAIL_LEN && t < 2;
@@ -435,7 +556,7 @@ function fly(R, w, opt) {
     const D = 0.5 * rho * Va * Va * (w.drag * R.cd(Va / as) * R.area + R.flapcd * w.flapcd * u * R.flapA);
     let ax = (thr - D) * ex / m, az = (thr - D) * ez / m - G0;
     if (onRail) { let al = ax * ex + az * ez; if (t < 0.2 && al < 0) al = 0; ax = al * ex; az = al * ez; }
-    out[0] = vx; out[1] = vz; out[2] = ax; out[3] = az; out[4] = Math.atan2(ez, ex); out[5] = Va / as; out[6] = onRail ? 1 : 0;
+    out[0] = vx; out[1] = vz; out[2] = ax; out[3] = az; out[4] = Math.atan2(ez, ex); out[5] = Va / as; out[6] = onRail ? 1 : 0; out[7] = Va;
     return out;
   }
   const kf = makeKF(), sense = opt.ctrl || opt.record;
@@ -444,7 +565,7 @@ function fly(R, w, opt) {
   const log = opt.record ? [] : null;
   for (;;) {
     const U = opt.fixedU ?? u;
-    let d = deriv(t, x, z, vx, vz, U); const k1 = [d[0], d[1], d[2], d[3]], pitch = d[4], mach = d[5], az1 = d[3];
+    let d = deriv(t, x, z, vx, vz, U); const k1 = [d[0], d[1], d[2], d[3]], pitch = d[4], mach = d[5], az1 = d[3], Va1 = d[7], rail1 = d[6];
     d = deriv(t+DT/2, x+DT/2*k1[0], z+DT/2*k1[1], vx+DT/2*k1[2], vz+DT/2*k1[3], U); const k2 = [d[0], d[1], d[2], d[3]];
     d = deriv(t+DT/2, x+DT/2*k2[0], z+DT/2*k2[1], vx+DT/2*k2[2], vz+DT/2*k2[3], U); const k3 = [d[0], d[1], d[2], d[3]];
     d = deriv(t+DT, x+DT*k3[0], z+DT*k3[1], vx+DT*k3[2], vz+DT*k3[3], U); const k4 = [d[0], d[1], d[2], d[3]];
@@ -457,21 +578,21 @@ function fly(R, w, opt) {
     if (!sense) continue;
     // sensors
     const [pr] = atm(Math.max(z, 0));
-    let baro = T0e/0.0065*(1 - Math.pow(pr/101325, 1/5.2561));
+    let baro = T0e/0.0065*(1 - Math.pow(pr/P0, 1/5.2561));
     baro += -w.trans * Math.exp(-Math.pow((mach - w.transMach)/0.06, 2)) + rnd.n()*BARO_N;
     const azm = az1 + w.bias + rnd.n()*ACC_N, pm = pitch + rnd.n()*GYRO_N;
     // decide whether to trust the baro this step
     let skip = false;
     if (opt.lockout) {
       const sp = opt.tilt ? Math.max(Math.sin(pm), 0.2) : 1;
-      const me = Math.abs(kf.x[1]) / sp / isa(Math.max(kf.x[0], 0))[1];
+      const me = Math.abs(kf.x[1]) / sp / isaC(Math.max(kf.x[0], 0))[1];
       skip = me > 0.75 && me < 1.2;
     }
     const e = kf(azm, baro, skip), he = e[0], ve = e[1], be = e[2];
     const Ve = opt.tilt ? ve / Math.max(Math.sin(pm), 0.2) : ve;
     // in-flight drag learning: fit body and flap drag scales to the measured deceleration
     if (opt.ctrl && opt.learn && t > R.burn + 0.05 && ve > 40) {
-      const [rho, a] = isa(Math.max(he, 0)), q = 0.5 * rho * Ve * ve / R.dry;
+      const [rho, a] = isaC(Math.max(he, 0)), q = 0.5 * rho * Ve * ve / R.dry;
       const pb = q * R.cd(Ve / a) * R.area, pf = q * R.flapcd * u * R.flapA, y = -(azm - be) - G0, iv = 1 / (ACC_N * ACC_N);
       M[0] = FORGET*M[0] + pb*pb*iv; M[1] = FORGET*M[1] + pb*pf*iv; M[2] = FORGET*M[2] + pf*pf*iv;
       r[0] = FORGET*r[0] + pb*y*iv; r[1] = FORGET*r[1] + pf*y*iv;
@@ -483,18 +604,97 @@ function fly(R, w, opt) {
     }
     if (opt.ctrl) {
       if (t > R.burn + 0.2 && ve > 0 && i % 5 === 0) {
-        if (opt.tilt) { const pc = Math.min(Math.PI - 0.2, Math.max(0.2, pm)); pred = predict2d(R, he, ve, ve / Math.tan(pc), opt.learn ? sb : 1); }
-        else pred = predict1d(R, he, ve, opt.learn ? sb : 1);
+        if (opt.tilt) { const pc = Math.min(Math.PI - 0.2, Math.max(0.2, pm)); pred = predict2d(R, he, ve, ve / Math.tan(pc), opt.learn ? sb : 1, isaC); }
+        else pred = predict1d(R, he, ve, opt.learn ? sb : 1, isaC);
         uc = Math.min(1, Math.max(0, R.kp * (pred - opt.target)));
       }
       if (ve <= 0) uc = 0;
       const st = DT / (R.servo * w.servo); u += Math.max(-st, Math.min(st, uc - u));
       if (u > umax) umax = u;
     }
-    if (log && i % 5 === 0) log.push([t, z, u, (opt.ctrl && t > R.burn + 0.2) ? pred : NaN, x]);
+    // log: 0 t, 1 altitude, 2 flap, 3 predicted apogee, 4 downrange, 5 pitch, 6 airspeed, 7 Mach, 8 baro ignored, 9 on rail, 10 altitude estimate
+    if (log && i % 5 === 0) log.push([t, z, u, (opt.ctrl && t > R.burn + 0.2) ? pred : NaN, x, pitch, Va1, mach, skip ? 1 : 0, rail1, he]);
     i++;
   }
   return { apogee: hmax, drift: xAtMax, log, vmax, amax, umax };
+}
+
+
+// ---------------- real rocket files ----------------
+// RASP .eng: comment lines start with ';'. First data line: name diameter(mm) length(mm) delays propMass(kg) totalMass(kg) maker. Then "time thrust" pairs.
+function parseEng(text) {
+  const lines = text.split(/\r?\n/).map(l => l.replace(/;.*$/, "").trim()).filter(Boolean);
+  if (!lines.length) throw new Error("The file is empty.");
+  const head = lines[0].split(/\s+/);
+  if (head.length < 7 || !isFinite(parseFloat(head[4]))) throw new Error("This doesn't look like a .eng motor file: the first line should be name, diameter, length, delays, propellant mass, total mass, maker.");
+  const t = [], f = [];
+  for (const l of lines.slice(1)) {
+    const v = l.split(/[\s,]+/).map(Number);
+    if (v.length < 2 || !isFinite(v[0]) || !isFinite(v[1])) continue;
+    if (t.length && v[0] <= t[t.length - 1]) continue;
+    t.push(v[0]); f.push(Math.max(0, v[1]));
+  }
+  if (t.length < 2) throw new Error("No thrust data found in the motor file.");
+  if (t[0] > 0) { t.unshift(0); f.unshift(0); }
+  if (f[f.length - 1] > 0) { t.push(t[t.length - 1] + 0.01); f.push(0); }
+  return { name: head[0], t, f, prop: parseFloat(head[4]) };
+}
+// Drag CSV: OpenRocket export ('#' comment header with column names) or plain mach,cd
+function parseDrag(text) {
+  const rows = [], lines = text.split(/\r?\n/);
+  let header = null;
+  for (const raw of lines) {
+    const l = raw.trim(); if (!l) continue;
+    if (l.startsWith("#") || /[a-df-z]/i.test(l.replace(/e[+-]?\d/gi, ""))) { if (/[,;\t]/.test(l)) header = l.replace(/^#\s*/, "").split(/[,;\t]/); continue; }
+    const v = l.split(/[,;\t]/).map(x => parseFloat(x));
+    if (v.some(x => isFinite(x))) rows.push(v);
+  }
+  if (!rows.length) throw new Error("No numbers found in the drag file.");
+  let im = 0, ic = 1;
+  if (header) {
+    const find = re => header.findIndex(h => re.test(h));
+    const a = find(/mach/i), b = find(/drag\s*coef|^\s*cd\b/i);
+    if (a >= 0 && b >= 0) { im = a; ic = b; }
+    else if (rows[0].length > 2) throw new Error("Couldn't find 'Mach number' and 'Drag coefficient' columns. Export those two from OpenRocket, or use a two-column mach,cd file.");
+  } else if (rows[0].length > 2) throw new Error("The file has more than two columns but no header. Use a two-column mach,cd file, or an OpenRocket export with its header.");
+  const bins = new Map();
+  for (const r of rows) {
+    const m = r[im], c = r[ic];
+    if (!(m >= 0.01 && m < 6 && c > 0.05 && c < 3)) continue;
+    const k = Math.round(m / 0.02); const b = bins.get(k) || [0, 0]; b[0] += c; b[1]++; bins.set(k, b);
+  }
+  const keys = [...bins.keys()].sort((a, b) => a - b);
+  if (keys.length < 3) throw new Error("Not enough usable Mach and drag coefficient values (need Mach above 0.01 and Cd between 0.05 and 3).");
+  const m = keys.map(k => k * 0.02), cd = keys.map(k => bins.get(k)[0] / bins.get(k)[1]);
+  return { m, cd, n: rows.length, maxM: m[m.length - 1] };
+}
+// Sample files, written the way the real tools write them (fictional motor and rocket)
+function sampleEng() {
+  const pts = [[0,0],[0.05,2150],[0.2,2480],[0.6,2380],[1.5,2250],[2.5,2120],[3.2,1950],[3.6,1500],[3.9,600],[4.15,0]];
+  return "; Sample motor for testing (fictional)\n; thrust curve in RASP format\nSAMPLE-M2200 98 732 0 4.6 8.9 Demo\n" + pts.map(p => `   ${p[0].toFixed(3)} ${p[1].toFixed(1)}`).join("\n") + "\n;\n";
+}
+function sampleDrag() {
+  const r = rng(99); let out = "# OpenRocket sample export (fictional rocket)\n# Time (s),Altitude (m),Mach number (​),Drag coefficient (​)\n";
+  const cdOf = m => 0.48 * interp(m, [0, 0.4, 0.8, 0.92, 1.0, 1.1, 1.3, 2], [1.0, 0.97, 1.0, 1.22, 1.45, 1.38, 1.2, 1.0]);
+  for (let i = 0; i <= 260; i++) { const t = i * 0.1, m = Math.max(0, 0.95 * Math.sin(Math.min(1, t / 4.5) * 1.4) * (t < 4.5 ? 1 : Math.max(0.05, 1 - (t - 4.5) / 22))); out += `${t.toFixed(2)},${(t * 120).toFixed(1)},${m.toFixed(4)},${(cdOf(m) * (1 + 0.02 * r.n())).toFixed(4)}\n`; }
+  return out;
+}
+const files = { motor: null, drag: null };
+function setFileState() {
+  const m = files.motor, d = files.drag;
+  $("motor-name").textContent = m ? `${m.name} · ${Math.round(trapz(m.t, m.f)).toLocaleString("en")} Ns, ${m.t[m.t.length-1].toFixed(2)} s` : "Built-in shape";
+  $("drag-name").textContent = d ? `${d.label} · Mach 0 to ${d.maxM.toFixed(2)}` : "Built-in curve";
+  $("x-motor").hidden = !m; $("x-drag").hidden = !d;
+  $("r-imp").readOnly = $("r-burn").readOnly = !!m; $("r-cd").readOnly = !!d;
+  if (m) { $("r-imp").value = Math.round(trapz(m.t, m.f)); $("r-burn").value = m.t[m.t.length-1].toFixed(2); if (m.prop > 0) $("r-prop").value = m.prop; }
+}
+function fileError(msg) { const a = $("file-alert"); a.hidden = !msg; a.textContent = msg || ""; }
+function loadText(kind, text, label) {
+  try {
+    if (kind === "motor") files.motor = parseEng(text);
+    else { const d = parseDrag(text); d.label = label; files.drag = d; }
+    fileError(""); $("preset").value = "custom"; setFileState(); clearMC("Rocket changed. Fly again."); run();
+  } catch (e) { fileError(e.message); }
 }
 
 // ---------------- state and inputs ----------------
@@ -509,6 +709,8 @@ const fmtM = v => Math.round(v).toLocaleString("en") + " m";
 function readRocket() {
   const r = {};
   for (const f of FIELDS) { const el = $("r-" + f), v = parseFloat(el.value); if (!isFinite(v) || v < +el.min || v > +el.max) return null; r[f] = v; }
+  if (files.motor) r.motor = files.motor;
+  if (files.drag) r.dragCurve = files.drag;
   return r;
 }
 function setRocket(p) { FIELDS.forEach(f => $("r-" + f).value = p[f]); $("target").value = p.target; }
@@ -562,7 +764,7 @@ function run() {
   const w = world();
   const res = fly(R, w, flightOpts({ ctrl: state.ctrl, target, seed: state.seed, record: true }));
   const ghost = fly(R, w, flightOpts({ ctrl: false, target, seed: state.seed, record: true }));
-  last = { res, ghost, target };
+  last = { res, ghost, target, wind: w.wind };
   const miss = res.apogee - target;
   $("t-apo").textContent = fmtM(res.apogee);
   $("t-apo-s").textContent = "No airbrake: " + fmtM(ghost.apogee);
@@ -646,6 +848,209 @@ function draw() {
   line(g, res.log.map(r => [r[0], r[3]]), X, Y, css("--accent"), 2);
   if (!state.ctrl) { g.fillStyle = css("--muted"); g.textAlign = "center"; g.fillText("Controller off: flaps stay closed", w/2, 20); }
   drawMC();
+  drawReplay();
+  drawLaunch();
+}
+
+
+// ---------------- replay ----------------
+const rp = { t: 0, playing: false, speed: 2, lastTs: 0 };
+function sampleAt(log, t) {
+  let lo = 0, hi = log.length - 1;
+  if (t <= log[0][0]) return log[0];
+  if (t >= log[hi][0]) return log[hi];
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (log[m][0] <= t) lo = m; else hi = m; }
+  const a = log[lo], b = log[hi], f = (t - a[0]) / (b[0] - a[0]);
+  return a.map((v, k) => (k === 8 || k === 9) ? (f < 0.5 ? v : b[k]) : (isFinite(v) && isFinite(b[k]) ? v + (b[k] - v) * f : (f < 0.5 ? v : b[k])));
+}
+function drawRocket(g, px, py, pitch, u, burning, scale) {
+  const L = 34 * scale, W = 7 * scale;
+  g.save(); g.translate(px, py); g.rotate(-pitch);
+  if (burning) {
+    const fl = (14 + Math.random() * 8) * scale;
+    g.fillStyle = css("--brake"); g.globalAlpha = 0.85;
+    g.beginPath(); g.moveTo(-L/2, -W/2 + 1); g.lineTo(-L/2 - fl, 0); g.lineTo(-L/2, W/2 - 1); g.closePath(); g.fill(); g.globalAlpha = 1;
+  }
+  g.fillStyle = css("--ink");
+  g.fillRect(-L/2, -W/2, L, W);
+  g.beginPath(); g.moveTo(L/2, -W/2); g.lineTo(L/2 + 10 * scale, 0); g.lineTo(L/2, W/2); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(-L/2, -W/2); g.lineTo(-L/2 - 4 * scale, -W/2 - 6 * scale); g.lineTo(-L/2 + 8 * scale, -W/2); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(-L/2, W/2); g.lineTo(-L/2 - 4 * scale, W/2 + 6 * scale); g.lineTo(-L/2 + 8 * scale, W/2); g.closePath(); g.fill();
+  if (u > 0.01) {                     // airbrake flaps swing out from the body
+    const len = (3 + 9 * u) * scale, xf = -L * 0.05;
+    g.strokeStyle = css("--brake"); g.lineWidth = 3 * scale; g.lineCap = "round";
+    g.beginPath(); g.moveTo(xf, -W/2); g.lineTo(xf - len * 0.25, -W/2 - len); g.moveTo(xf, W/2); g.lineTo(xf - len * 0.25, W/2 + len); g.stroke();
+  }
+  g.restore();
+}
+function drawReplay() {
+  if ($("view-replay").hidden || !last) return;
+  const { res, ghost, target, wind } = last, log = res.log, tEnd = log[log.length - 1][0];
+  rp.t = Math.min(Math.max(rp.t, 0), tEnd);
+  const S = sampleAt(log, rp.t);
+  const [g, w, h] = setup($("c-replay"));
+  const pad = { l: 58, r: 70, t: 16, b: 26 };
+  const xsAll = log.concat(ghost.log).map(r => r[4]);
+  const xmin = Math.min(0, ...xsAll), xmax = Math.max(0, ...xsAll);
+  const zmax = Math.max(ghost.apogee, res.apogee, target) * 1.1;
+  const sc = Math.min((w - pad.l - pad.r) / Math.max(200, xmax - xmin), (h - pad.t - pad.b) / zmax);
+  const cx = pad.l + (w - pad.l - pad.r) / 2, xmid = (xmin + xmax) / 2;
+  const X = x => cx + (x - xmid) * sc, Y = z => h - pad.b - z * sc;
+  // altitude grid
+  g.strokeStyle = css("--line"); g.fillStyle = css("--muted"); g.lineWidth = 1; g.textAlign = "right"; g.textBaseline = "middle";
+  ticks(0, zmax, 5).forEach(v => { g.beginPath(); g.moveTo(pad.l, Y(v)); g.lineTo(w - pad.r, Y(v)); g.stroke(); g.fillText(v.toLocaleString("en") + " m", pad.l - 6, Y(v)); });
+  g.strokeStyle = css("--ink"); g.lineWidth = 2; g.beginPath(); g.moveTo(pad.l, Y(0)); g.lineTo(w - pad.r, Y(0)); g.stroke();
+  g.fillStyle = css("--muted"); g.textAlign = "center"; g.textBaseline = "top"; g.fillText("pad", X(0), Y(0) + 4);
+  // target
+  g.setLineDash([6, 5]); g.strokeStyle = css("--good"); g.lineWidth = 1.5; g.beginPath(); g.moveTo(pad.l, Y(target)); g.lineTo(w - pad.r, Y(target)); g.stroke(); g.setLineDash([]);
+  g.fillStyle = css("--good"); g.textAlign = "left"; g.textBaseline = "bottom"; g.font = "12px " + css("--font-body"); g.fillText("Target " + Math.round(target).toLocaleString("en") + " m", pad.l + 6, Y(target) - 3);
+  // wind profile arrows on the right
+  if (wind) {
+    g.strokeStyle = css("--muted"); g.fillStyle = css("--muted"); g.lineWidth = 1.5;
+    const xa = w - pad.r + 36;
+    ticks(0, zmax, 5).forEach(z => {
+      const ws = wind * Math.pow(Math.max(z, 2) / 10, 1/7), len = Math.min(30, Math.abs(ws) * 2.2), dir = Math.sign(ws), y = Y(z);
+      if (len < 2) return;
+      g.beginPath(); g.moveTo(xa - dir * len / 2, y); g.lineTo(xa + dir * len / 2, y); g.stroke();
+      g.beginPath(); g.moveTo(xa + dir * len / 2, y); g.lineTo(xa + dir * (len / 2 - 5), y - 3.5); g.lineTo(xa + dir * (len / 2 - 5), y + 3.5); g.closePath(); g.fill();
+    });
+    g.textAlign = "center"; g.textBaseline = "bottom"; g.font = "11px " + css("--font-body"); g.fillText("wind", xa, pad.t + 8);
+  }
+  g.font = "12px " + css("--font-mono");
+  // paths
+  line(g, ghost.log.map(r => [r[4], r[1]]), X, Y, css("--ghost"), 1.5);
+  g.setLineDash([3, 4]); line(g, log.filter(r => r[0] >= rp.t).map(r => [r[4], r[1]]), X, Y, css("--accent"), 1.2); g.setLineDash([]);
+  line(g, log.filter(r => r[0] <= rp.t).map(r => [r[4], r[1]]).concat([[S[4], S[1]]]), X, Y, css("--accent"), 3);
+  // apogee marker once reached
+  const top = log.reduce((a, r) => r[1] > a[1] ? r : a);
+  if (rp.t >= top[0] - 0.05) {
+    g.fillStyle = css("--accent"); g.beginPath(); g.arc(X(top[4]), Y(top[1]), 5, 0, 7); g.fill();
+    g.textAlign = "left"; g.textBaseline = "bottom"; g.fillStyle = css("--ink"); g.font = "600 13px " + css("--font-body");
+    g.fillText(`Apogee ${Math.round(top[1]).toLocaleString("en")} m (${fmtS(top[1] - target, 1)} m)`, X(top[4]) + 10, Y(top[1]) - 6);
+  }
+  drawRocket(g, X(S[4]), Y(S[1]), S[5], S[2], S[0] < R.burn, Math.min(1.2, Math.max(0.7, h / 500)));
+  // readouts
+  $("rp-t").textContent = S[0].toFixed(1) + " s";
+  $("rp-h").textContent = Math.round(S[1]).toLocaleString("en") + " m";
+  $("rp-v").textContent = Math.round(S[6]) + " m/s, M" + S[7].toFixed(2);
+  $("rp-u").textContent = Math.round(S[2] * 100) + "%";
+  $("rp-p").textContent = isFinite(S[3]) ? Math.round(S[3]).toLocaleString("en") + " m" : "-";
+  $("rp-ph").textContent = rp.t >= tEnd - 0.05 ? "Apogee reached" : S[9] ? "On the launch rail" : S[0] < R.burn ? "Motor burning, flaps locked" :
+    S[8] ? "Coasting near Mach 1: barometer ignored" : S[2] > 0.02 ? "Coasting: airbrake working" : "Coasting: flaps closed";
+  $("rp-scrub").value = Math.round(rp.t / tEnd * 1000);
+}
+function rpTick(ts) {
+  if (!rp.playing) return;
+  const dt = rp.lastTs ? (ts - rp.lastTs) / 1000 : 0; rp.lastTs = ts;
+  rp.t += dt * rp.speed;
+  const tEnd = last.res.log[last.res.log.length - 1][0];
+  if (rp.t >= tEnd) { rp.t = tEnd; rp.playing = false; $("rp-play").textContent = "Replay"; $("rp-play").setAttribute("aria-label", "Replay"); }
+  drawReplay();
+  if (rp.playing) requestAnimationFrame(rpTick);
+}
+function rpPlay() {
+  if (!last) return;
+  const tEnd = last.res.log[last.res.log.length - 1][0];
+  if (rp.playing) { rp.playing = false; $("rp-play").textContent = "Play"; $("rp-play").setAttribute("aria-label", "Play"); return; }
+  if (rp.t >= tEnd - 0.05) rp.t = 0;
+  rp.playing = true; rp.lastTs = 0; $("rp-play").textContent = "Pause"; $("rp-play").setAttribute("aria-label", "Pause");
+  requestAnimationFrame(rpTick);
+}
+
+
+// ---------------- launch day ----------------
+let lt = null;
+function ltInputs() {
+  const num = id => parseFloat($(id).value);
+  return { wind: num("lt-wind") * +$("lt-dir").value, speed: num("lt-wind"), dir: +$("lt-dir").value, T: num("lt-temp"), p: num("lt-press") * 100,
+           rail: Math.min(15, Math.max(0, num("lt-rail"))) * Math.PI / 180, acc: Math.max(0, num("lt-acc")) };
+}
+function runLaunch() {
+  const L = ltInputs(), target = parseFloat($("target").value), Rr = R;
+  if (![L.speed, L.T, L.p, L.rail, L.acc, target].every(isFinite) || !Rr) { $("lt-status").className = "lstatus nogo"; $("lt-status").textContent = "Check the numbers: one of the fields is empty or not a number."; return; }
+  const btn = $("lt-run"); btn.disabled = true;
+  const base = { drag: 1, imp: 1, mass: 1, flapcd: 1, bias: 0, dT: L.T - 15, padT: 0, trans: 0, transMach: 0.9, servo: 1, wind: L.wind, p0: L.p };
+  const T0 = 288.15 + base.dT;
+  const closedAt = (wnd, rail) => fly(Rr, { ...base, wind: wnd }, { ctrl: false, rail, seed: 1 }).apogee;
+  const openAt = (wnd, rail) => fly(Rr, { ...base, wind: wnd }, { ctrl: false, rail, seed: 1, fixedU: 0, openAfter: 1 }).apogee;
+  const res = { L, target, winds: [], down: [], back: [], rails: [], rClosed: [], rOpen: [] };
+  res.closed = closedAt(L.wind, L.rail); res.open = openAt(L.wind, L.rail);
+  for (let wv = 0; wv <= 16; wv += 1) { res.winds.push(wv); res.down.push(closedAt(wv, L.rail)); res.back.push(closedAt(-wv, L.rail)); }
+  for (let rd = 0; rd <= 10; rd += 1) { const rr = rd * Math.PI / 180; res.rails.push(rd); res.rClosed.push(closedAt(L.wind, rr)); res.rOpen.push(openAt(L.wind, rr)); }
+  const sd = { drag: $("s-drag").value/100, imp: $("s-imp").value/100, mass: $("s-mass").value/100, flap: $("s-flap").value/100, bias: +$("s-bias").value };
+  const rnd = rng(777), N = 150, cl = [], op = [], miss = [];
+  let k = 0;
+  $("lt-status").className = "lstatus"; $("lt-status").textContent = "Flying today's rockets…";
+  (function chunk() {
+    for (const end = Math.min(N, k + 10); k < end; k++) {
+      const padErr = L.acc * rnd.n();
+      const wv = { ...base, drag: Math.max(0.5, 1 + sd.drag*rnd.n()), imp: Math.max(0.5, 1 + sd.imp*rnd.n()), mass: Math.max(0.5, 1 + sd.mass*rnd.n()),
+                   flapcd: Math.max(0.2, 1 + sd.flap*rnd.n()), bias: sd.bias*rnd.n(), padT: padErr, trans: 60 + 120*rnd.u(), transMach: 0.85 + 0.1*rnd.u(),
+                   servo: 0.8 + 0.6*rnd.u(), wind: L.wind * (1 + 0.25 * rnd.n()) };
+      const c = fly(Rr, wv, { ctrl: false, rail: L.rail, seed: 2000 + k }).apogee;
+      const o = fly(Rr, wv, { ctrl: false, rail: L.rail, seed: 2000 + k, fixedU: 0, openAfter: 1 }).apogee;
+      // the flight computer is told today's pad readings (its temperature reading has the sensor error)
+      const f = fly(Rr, wv, flightOpts({ ctrl: true, target, rail: L.rail, seed: 2000 + k, cT0: T0 + padErr, cP0: L.p })).apogee;
+      cl.push(c); op.push(o); if (c >= target) miss.push(f - target);
+    }
+    $("lt-status").textContent = `Flying today's rockets… ${k} / ${N}`;
+    if (k < N) return setTimeout(chunk, 0);
+    const mean = a => a.reduce((x, y) => x + y, 0) / a.length, sdv = a => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); };
+    res.pReach = cl.filter(a => a >= target).length / N; res.pOpen = op.filter(a => a <= target).length / N; res.sdClosed = sdv(cl);
+    const sm = miss.slice().sort((a, b) => a - b), q = f => sm[Math.floor(f * (sm.length - 1))];
+    res.band = sm.length ? [q(0.025), q(0.975)] : null;
+    // wind limit: strongest wind (this direction) where the closed apogee stays 2 sigma above the target
+    const arr = L.dir > 0 ? res.down : res.back, need = target + 2 * res.sdClosed;
+    let limit = null;
+    for (let j = 0; j < arr.length; j++) { if (arr[j] < need) { limit = j === 0 ? 0 : res.winds[j-1] + (arr[j-1] - need) / (arr[j-1] - arr[j]); break; } }
+    res.limit = limit === null ? Infinity : limit;
+    lt = res; btn.disabled = false; showLaunch(); drawLaunch();
+  })();
+}
+function showLaunch() {
+  const r = lt, pct = x => Math.round(x * 100) + "%";
+  $("lt-closed").textContent = fmtM(r.closed);
+  $("lt-closed-s").textContent = `margin ${fmtS(r.closed - r.target)} m over target`;
+  $("lt-reach").textContent = pct(r.pReach);
+  $("lt-band").textContent = r.band ? `${fmtS(r.band[0])} / ${fmtS(r.band[1])} m` : "-";
+  $("lt-limit").textContent = r.limit === Infinity ? "over 16 m/s" : r.limit.toFixed(1) + " m/s";
+  $("lt-limit-s").textContent = (r.L.dir > 0 ? "blowing downrange" : "blowing back over the pad") + ", 2-sigma height margin";
+  let cls, tag, msg;
+  if (r.pReach < 0.8) { cls = "nogo"; tag = "NO-GO"; msg = `Only ${pct(r.pReach)} of rockets reach ${fmtM(r.target)} even with flaps closed. Lower the target, reduce the rail tilt, or wait for wind under ${isFinite(r.limit) ? r.limit.toFixed(1) + " m/s" : "the limit"}.`; }
+  else if (r.pOpen < 0.8) { cls = "nogo"; tag = "NO-GO"; msg = `The flaps can only pull ${pct(r.pOpen)} of rockets down to the target. Today's air is helping the rocket too much: raise the target or add flap area.`; }
+  else if (r.pReach < 0.95 || r.pOpen < 0.95) { cls = "caution"; tag = "CAUTION"; msg = `${pct(r.pReach)} of rockets can reach the target and ${pct(r.pOpen)} can be braked down to it. Small margin: check the wind again just before launch.`; }
+  else { cls = "go"; tag = "GO"; msg = `Enough height and enough braking. Expect to land between ${fmtS(r.band[0])} and ${fmtS(r.band[1])} m of the target. Measure pad temperature in the shade and enter it: each 1 K of error moves apogee about 10 m.`; }
+  const col = { go: "--good", caution: "--warn", nogo: "--bad" }[cls];
+  $("lt-status").className = "lstatus " + cls;
+  $("lt-status").innerHTML = `<span class="tag" style="background:var(${col})">${tag}</span>${msg}`;
+}
+function drawLaunch() {
+  if ($("view-launch").hidden) return;
+  const pad = { l: 56, r: 14, t: 10, b: 24 };
+  [["c-lt-wind", "wind"], ["c-lt-rail", "rail"]].forEach(([id, kind]) => {
+    const [g, w, h] = setup($(id));
+    if (!lt) { g.fillStyle = css("--muted"); g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("Run the launch check to see this chart", w/2, h/2); return; }
+    const xs = kind === "wind" ? lt.winds : lt.rails;
+    const series = kind === "wind" ? [[lt.down, "--accent"], [lt.back, "--brake"]] : [[lt.rClosed, "--accent"], [lt.rOpen, "--ghost"]];
+    const all = series.flatMap(s => s[0]).concat([lt.target]);
+    const lo = Math.min(...all), hi = Math.max(...all), m = (hi - lo) * 0.08;
+    const [X, Y] = axes(g, w, h, [xs[0], xs[xs.length - 1]], [lo - m, hi + m], pad, { nx: 8 });
+    g.strokeStyle = css("--good"); g.lineWidth = 2; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(pad.l, Y(lt.target)); g.lineTo(w - pad.r, Y(lt.target)); g.stroke(); g.setLineDash([]);
+    if (kind === "rail") {   // shade the range the airbrake can cover
+      g.fillStyle = css("--accent"); g.globalAlpha = 0.08; g.beginPath();
+      xs.forEach((x, i) => i ? g.lineTo(X(x), Y(lt.rClosed[i])) : g.moveTo(X(x), Y(lt.rClosed[i])));
+      for (let i = xs.length - 1; i >= 0; i--) g.lineTo(X(xs[i]), Y(lt.rOpen[i]));
+      g.closePath(); g.fill(); g.globalAlpha = 1;
+    }
+    series.forEach(([ys, col]) => line(g, xs.map((x, i) => [x, ys[i]]), X, Y, css(col), 2.5));
+    // today's point
+    const cx = kind === "wind" ? lt.L.speed : lt.L.rail * 180 / Math.PI, cy = lt.closed;
+    if (cx >= xs[0] && cx <= xs[xs.length - 1]) {
+      g.fillStyle = css(kind === "wind" && lt.L.dir < 0 ? "--brake" : "--accent"); g.strokeStyle = css("--panel"); g.lineWidth = 2;
+      g.beginPath(); g.arc(X(cx), Y(cy), 6, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = css("--ink"); g.textAlign = "left"; g.textBaseline = "bottom"; g.font = "600 12px " + css("--font-body"); g.fillText("today", X(cx) + 8, Y(cy) - 4);
+    }
+  });
 }
 
 // ---------------- Monte Carlo ----------------
@@ -752,7 +1157,13 @@ function runMC() {
     btn.disabled = false; drawMC();
   })();
 }
-function clearMC(msg) { mc = null; ["m-band", "m-sd", "m-25", "m-cut"].forEach(id => $(id).textContent = "-"); $("mc-status").textContent = msg; drawMC(); }
+function clearLaunch() {
+  if (!lt) return; lt = null;
+  ["lt-closed", "lt-reach", "lt-band", "lt-limit"].forEach(id => $(id).textContent = "-"); $("lt-closed-s").textContent = "";
+  $("lt-status").className = "lstatus"; $("lt-status").innerHTML = "<b>The rocket or target changed.</b> Run the launch check again.";
+  drawLaunch();
+}
+function clearMC(msg) { clearLaunch(); mc = null; ["m-band", "m-sd", "m-25", "m-cut"].forEach(id => $(id).textContent = "-"); $("mc-status").textContent = msg; drawMC(); }
 
 // ---------------- wiring ----------------
 function seg(onId, offId, key) {
@@ -772,17 +1183,29 @@ const later = fn => { cancelAnimationFrame(pending); pending = requestAnimationF
 ["s-drag", "s-imp", "s-mass", "s-flap", "s-padT", "s-bias", "s-wind"].forEach(id => $(id).addEventListener("input", labels));
 FIELDS.forEach(f => $("r-" + f).addEventListener("input", () => { $("preset").value = "custom"; clearMC("Rocket changed. Fly again."); later(run); }));
 $("target").addEventListener("input", () => { clearMC("Target changed. Fly again."); later(run); });
-$("preset").addEventListener("change", e => { const p = PRESETS[e.target.value]; if (p) { setRocket(p); clearMC("Rocket changed. Fly again."); run(); } });
+$("preset").addEventListener("change", e => { const p = PRESETS[e.target.value]; if (p) { files.motor = files.drag = null; setFileState(); fileError(""); setRocket(p); clearMC("Rocket changed. Fly again."); run(); } });
 $("reset").onclick = () => { Object.entries(WORLD0).forEach(([k, v]) => $(k).value = v); run(); };
 $("reseed").onclick = () => { state.seed = Math.floor(Math.random() * 1e6); run(); };
 $("mc").onclick = runMC;
+["motor", "drag"].forEach(kind => {
+  $("f-" + kind).addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => loadText(kind, t, f.name)); e.target.value = ""; });
+  $("x-" + kind).onclick = () => { files[kind] = null; setFileState(); clearMC("Rocket changed. Fly again."); run(); };
+});
+$("samples").onclick = () => { loadText("motor", sampleEng(), "SAMPLE-M2200.eng"); loadText("drag", sampleDrag(), "openrocket_sample.csv"); };
+$("file-help-btn").onclick = () => { const h = $("file-help"); h.hidden = !h.hidden; $("file-help-btn").setAttribute("aria-expanded", !h.hidden); };
+const TABS = ["flight", "replay", "mc", "launch"];
 function showTab(which) {
-  $("tab-flight").setAttribute("aria-pressed", which === "flight"); $("tab-mc").setAttribute("aria-pressed", which === "mc");
-  $("view-flight").hidden = which !== "flight"; $("view-mc").hidden = which !== "mc";
+  TABS.forEach(k => { $("tab-" + k).setAttribute("aria-pressed", k === which); $("view-" + k).hidden = k !== which; });
+  if (which !== "replay" && rp.playing) rpPlay();
   draw();
+  if (which === "launch" && !lt && R) runLaunch();
 }
-$("tab-flight").onclick = () => showTab("flight");
-$("tab-mc").onclick = () => showTab("mc");
+TABS.forEach(k => $("tab-" + k).onclick = () => showTab(k));
+$("rp-play").onclick = rpPlay;
+$("lt-run").onclick = runLaunch;
+$("lt-rail").value = $("rail").value;
+$("rp-scrub").addEventListener("input", e => { if (!last) return; if (rp.playing) rpPlay(); rp.t = e.target.value / 1000 * last.res.log[last.res.log.length - 1][0]; drawReplay(); });
+document.querySelectorAll("#rp-speed button").forEach(b => b.onclick = () => { rp.speed = +b.dataset.s; document.querySelectorAll("#rp-speed button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
 if (window.ResizeObserver) new ResizeObserver(() => later(draw)).observe(document.querySelector(".main"));
 window.addEventListener("resize", () => later(draw));
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);

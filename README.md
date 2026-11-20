@@ -40,6 +40,9 @@ python monte_carlo.py   # about 2-3 minutes on 2 cores
 
 - enter your own rocket (diameter, Cd, masses, motor impulse and burn time, flap area, servo speed, controller gain) or pick a 3 km or 9 km preset
 - add wind and a launch rail angle, and switch between the 1-D and tilt-aware flight computer, with or without in-flight drag learning
+- load real rocket data: a RASP `.eng` motor thrust curve and a drag coefficient vs Mach CSV exported from OpenRocket or RocketPy (sample files built in)
+- watch an animated replay of the flight with flaps opening, wind arrows and live readouts
+- run a **launch day check**: enter today's wind, temperature, pressure and rail tilt to get predicted apogee, a GO / CAUTION / NO-GO verdict, the expected landing band and today's wind limit
 - change the real-world conditions the flight computer does not know about
 - fly 100 to 1,000 Monte Carlo rockets with adjustable uncertainty spreads, and view the miss histogram, apogees with and without the airbrake, a sensitivity ranking, miss vs drag error, or miss vs wind
 
