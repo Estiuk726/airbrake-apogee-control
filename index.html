@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airbrake Apogee Control</title>
+<meta name="description" content="Airbrake guidance study for a EuRoC 3 km rocket: simulation, Kalman filter, Monte Carlo and the official logger altitude bias.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--panel:#111113;--ink:#fff;--muted:#b3b3b3;--line:#2b2b2b;--crimson:#c7244b;--burgundy:#8e202b;--peri:#c7cfff;--good:#3ddc84;
+--font:"Noto Sans",system-ui,-apple-system,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:radial-gradient(1100px 650px at 90% -10%,rgba(199,36,75,.22),transparent 60%),radial-gradient(900px 600px at -10% 110%,rgba(142,32,43,.16),transparent 60%),#000;background-attachment:fixed;color:var(--ink);font-family:var(--font);line-height:1.6}
+a{color:var(--peri)} a:focus-visible,button:focus-visible{outline:2px solid var(--crimson);outline-offset:2px}
+.top{display:flex;align-items:baseline;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.top b{font-weight:900;letter-spacing:.06em;text-transform:uppercase}.top span{font-weight:300;letter-spacing:.32em;text-transform:uppercase;font-size:.85rem}
+.top a{margin-left:auto;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none}
+
+main{max-width:980px;margin:0 auto;padding:40px 20px 60px}
+.kick{color:var(--crimson);font-weight:900;letter-spacing:1px;text-transform:uppercase;font-size:.8rem;margin:0}
+h1{font-weight:900;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.1;margin:.3em 0 .4em;text-wrap:balance}
+.lead{color:#e0e0e0;max-width:64ch;font-size:1.05rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:28px 0}
+.stat{background:rgba(23,23,23,.85);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.stat .k{font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:1.6rem;margin-top:2px}.stat .s{color:var(--muted);font-size:.82rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:10px}
+.card{display:flex;flex-direction:column;gap:6px;background:rgba(23,23,23,.85);border:1px solid var(--line);border-radius:8px;padding:18px;text-decoration:none;color:var(--ink);position:relative}
+.card::before{content:"";position:absolute;left:-1px;top:16px;width:3px;height:18px;background:var(--crimson);border-radius:0 2px 2px 0}
+.card:hover{border-color:var(--crimson)}
+.card b{font-weight:900;letter-spacing:1px;text-transform:uppercase;font-size:.9rem}.card span{color:var(--muted);font-size:.9rem}
+.card i{font-style:normal;color:var(--peri);font-size:.82rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:auto}
+.fig{margin:34px 0 0}.fig img{max-width:100%;border:1px solid var(--line);border-radius:8px}
+h2{font-weight:900;text-transform:uppercase;letter-spacing:1px;font-size:.9rem;margin:40px 0 12px}
+.steps{display:grid;gap:6px;padding:0;margin:0;list-style:none;counter-reset:s}
+.steps li{display:grid;grid-template-columns:34px 1fr;gap:10px;color:#e0e0e0;font-size:.95rem}
+.steps li::before{counter-increment:s;content:counter(s);font-family:var(--mono);color:var(--crimson)}
+footer{margin-top:44px;color:var(--muted);font-size:.82rem;border-top:1px solid var(--line);padding-top:14px}
+</style></head>
+<body><div class="top"><b>Airbrake</b><span>Guidance study</span><a href="https://github.com/Estiuk726/airbrake-apogee-control">GitHub</a></div>
+<main>
+<p class="kick">Independent study for BME Suborbitals</p>
+<h1>Hitting 3,000 m on the altitude the judges actually measure</h1>
+<p class="lead">A complete airbrake guidance chain for a EuRoC 3 km rocket, built from scratch: flight simulation, sensor fusion, apogee prediction, in-flight drag learning and wind. It ends with a finding about the official CATS Vega logger, which assumes a 15 °C day.</p>
+<div class="stats">
+  <div class="stat"><div class="k">Official logger bias</div><div class="v">≈10 m/°C</div><div class="s">a true 3,000 m logs as 2,897 m at 25 °C</div></div>
+  <div class="stat"><div class="k">Scored miss, 1σ</div><div class="v">55 → 15 m</div><div class="s">aiming for logger altitude instead of true</div></div>
+  <div class="stat"><div class="k">Within ±25 m</div><div class="v">22 → 91%</div><div class="s">139 simulated EuRoC launch days</div></div>
+</div>
+<div class="cards">
+  <a class="card" href="demo/"><b>Live demo</b><span>Fly the rocket, change wind and temperature, replay the flight, run a Monte Carlo or a launch day check.</span><i>Open console</i></a>
+  <a class="card" href="docs/technical-note.html"><b>Technical note</b><span>The official logger's 15 °C assumption, its effect on an Eclipse-like rocket, and a software fix.</span><i>Read the note</i></a>
+  <a class="card" href="https://github.com/Estiuk726/airbrake-apogee-control"><b>Code and data</b><span>Python simulator, Kalman filter, controllers, Monte Carlo scripts, results and figures.</span><i>View on GitHub</i></a>
+</div>
+<div class="fig"><img src="figures/step8_logged_vs_temperature.png" alt="Logged apogee miss against ground temperature for three airbrake computers"></div>
+<h2>How it was built</h2>
+<ol class="steps">
+  <li>1-D flight simulator with RK4, standard atmosphere and Mach-dependent drag</li>
+  <li>Airbrake model: authority and timing</li>
+  <li>Barometer and accelerometer errors, Kalman filter with transonic lockout</li>
+  <li>Apogee predictor and closed-loop flap controller</li>
+  <li>1,000-flight Monte Carlo and sensitivity ranking</li>
+  <li>In-flight learning of body and flap drag</li>
+  <li>2-D flight with wind and rail angle, tilt-aware computer</li>
+  <li>Eclipse-like model and the EuRoC official logger analysis</li>
+</ol>
+<footer>A. E. M. Estiuk Ahmed · BSc Professional Pilot, Budapest University of Technology and Economics. Independent work from public sources; not an official BME Suborbitals publication.</footer>
+</main></body></html>

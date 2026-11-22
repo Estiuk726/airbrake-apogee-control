@@ -1,5 +1,8 @@
 # Airbrake Apogee Control
 
+**Live site:** https://estiuk726.github.io/airbrake-apogee-control/ · **Demo:** [/demo](https://estiuk726.github.io/airbrake-apogee-control/demo/) · **Technical note:** [docs/technical-note.md](docs/technical-note.md)
+
+
 Simulation, state estimation and Monte Carlo validation of an airbrake controller for a competition rocket targeting a 3,000 m apogee.
 
 **Result:** across 1,000 randomised flights, 95% landed within **-46 m to +36 m** of target (1-sigma 20 m), against a 1-sigma spread of 157 m without the airbrake.

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoring the Apogee the Judges Measure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--panel:#111113;--ink:#fff;--muted:#b3b3b3;--line:#2b2b2b;--crimson:#c7244b;--burgundy:#8e202b;--peri:#c7cfff;--good:#3ddc84;
+--font:"Noto Sans",system-ui,-apple-system,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:radial-gradient(1100px 650px at 90% -10%,rgba(199,36,75,.22),transparent 60%),radial-gradient(900px 600px at -10% 110%,rgba(142,32,43,.16),transparent 60%),#000;background-attachment:fixed;color:var(--ink);font-family:var(--font);line-height:1.6}
+a{color:var(--peri)} a:focus-visible,button:focus-visible{outline:2px solid var(--crimson);outline-offset:2px}
+.top{display:flex;align-items:baseline;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.top b{font-weight:900;letter-spacing:.06em;text-transform:uppercase}.top span{font-weight:300;letter-spacing:.32em;text-transform:uppercase;font-size:.85rem}
+.top a{margin-left:auto;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none}
+
+main{max-width:760px;margin:0 auto;padding:28px 20px 60px}
+h1{font-weight:900;font-size:1.9rem;line-height:1.2;text-wrap:balance;margin:.2em 0 .3em}
+h2{font-weight:900;text-transform:uppercase;letter-spacing:1px;font-size:.95rem;margin:2.4em 0 .8em;padding-left:10px;border-left:3px solid var(--crimson)}
+p,li{color:#e8e8e8} em{color:var(--muted)} strong{color:#fff}
+table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.9rem;display:block;overflow-x:auto}
+th{text-align:left;font-size:.72rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--crimson);padding:8px 10px}
+td{border-bottom:1px solid var(--line);padding:8px 10px;font-variant-numeric:tabular-nums}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;overflow-x:auto}
+code{font-family:var(--mono);font-size:.84rem;color:var(--peri)}
+img{max-width:100%;border:1px solid var(--line);border-radius:6px;margin:.6em 0}
+.byline{font-family:var(--mono);color:var(--muted);font-size:.85rem}
+</style></head>
+<body><div class="top"><b>Airbrake</b><span>Guidance study</span><a href="../">All project files</a></div>
+<main><h1>Scoring the Apogee the Judges Measure: CATS Vega Altitude and the Eclipse Airbrake</h1>
+<p class="byline">20 November 2026 · A. E. M. Estiuk Ahmed</p>
+<p>The EuRoC apogee that gets scored is not the rocket's true height: the mandatory CATS Vega logger converts pressure to altitude as if the ground were at 15 °C. On a 25 °C launch day a true 3,000 m is logged as about 2,897 m.</p>
+<p><em>Independent analysis prepared for BME Suborbitals. Based only on public sources and the open-source CATS firmware; not reviewed by the team.</em></p>
+<h2>Summary</h2>
+<ul>
+<li><strong>The bias is about 10 m per °C</strong> away from 15 °C. October afternoons in Central Portugal average around 21 °C, which puts a true 3,000 m roughly 60 m below target on the official log.</li>
+<li><strong>It depends on what the airbrake computer aims for.</strong> In simulation of an Eclipse-like rocket over 139 launch days that could reach the target, aiming for true altitude gave a mean logged miss of −62 m (1σ 55 m). Aiming for the logger's own altitude gave −2 m (1σ 15 m), with 91% of flights within ±25 m.</li>
+<li><strong>The fix is software only:</strong> compute the target as the pressure at which CATS reads 3,000 m, and stop the climb there. No hardware change, no extra sensor.</li>
+<li><strong>Hot days also cost margin:</strong> a logged 3,000 m at 30 °C needs about 3,158 m of true height, so the motor must overshoot more than a standard-day simulation suggests.</li>
+</ul>
+<h2>1. The official logger assumes a 15 °C day</h2>
+<p>EuRoC determines the competition apogee from a mandatory CATS Vega flight computer, and modifications to it are not allowed. Its firmware (catsystems/cats-embedded, commit f366de8) converts pressure to height with fixed constants:</p>
+<pre><code class="language-cpp">// flight_computer/src/config/control_config.hpp
+inline constexpr float P_INITIAL = 101250.0F;
+inline constexpr float TEMPERATURE_0 = 15.0F;   // °C
+
+// flight_computer/src/control/data_processing.cpp
+float32_t calculate_height(float32_t pressure) {
+  return (-(powf(pressure / P_INITIAL, (1 / 5.257F)) - 1) * (TEMPERATURE_0 + 273.15F) / 0.0065F);
+}
+</code></pre>
+<p>The logged altitude is this height minus the same height averaged over about 5 s on the pad and frozen at liftoff (task_preprocessing.cpp). The recorded apogee is the maximum of CATS's own Kalman-filtered height (recorder.cpp), which near apogee follows the barometer closely: expect 1 to 3 m of extra bias, not tens of metres.</p>
+<p>When the real air is warmer than 15 °C, pressure falls more slowly with height, so the logger under-reads. To first order the logged height is the true height times 288.15 / T₀, with T₀ the ground temperature in kelvin.</p>
+<table>
+<thead>
+<tr>
+<th>Ground temperature</th>
+<th>True 3,000 m is logged as</th>
+<th>True height needed for a logged 3,000 m</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10 °C</td>
+<td>3,051 m</td>
+<td>2,950 m</td>
+</tr>
+<tr>
+<td>15 °C</td>
+<td>2,998 m</td>
+<td>3,002 m</td>
+</tr>
+<tr>
+<td>20 °C</td>
+<td>2,947 m</td>
+<td>3,054 m</td>
+</tr>
+<tr>
+<td>25 °C</td>
+<td>2,897 m</td>
+<td>3,106 m</td>
+</tr>
+<tr>
+<td>30 °C</td>
+<td>2,850 m</td>
+<td>3,158 m</td>
+</tr>
+</tbody>
+</table>
+<p>Standard lapse rate of 6.5 K/km and pad pressure 1010 hPa. A different lapse rate shifts these by a few metres: what matters is the average temperature of the air between the pad and apogee. Pad pressure matters too: at 15 °C, a pad at 950 hPa logs a true 3,000 m as about 2,963 m.</p>
+<h2>2. Method</h2>
+<p>The test rocket is an Eclipse-like model whose motor was tuned so it reproduces Eclipse's published rail exit and maximum speeds within 1%. It flies a full guidance chain: barometer and accelerometer with realistic errors, a Kalman filter with transonic barometer lockout, gyro-based airspeed, in-flight learning of body and flap drag, a 2-D apogee predictor and a rate-limited flap controller active from 900 m.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Liftoff mass</td>
+<td>33 kg</td>
+<td>Public</td>
+</tr>
+<tr>
+<td>Rail exit / maximum speed</td>
+<td>164 / 970 km/h (model: 163 / 968)</td>
+<td>Public</td>
+</tr>
+<tr>
+<td>Airbrake active</td>
+<td>from 900 m</td>
+<td>Public</td>
+</tr>
+<tr>
+<td>Rail</td>
+<td>12 m at 84° elevation</td>
+<td>EuRoC SRD</td>
+</tr>
+<tr>
+<td>Motor</td>
+<td>9,826 Ns over 4.13 s, 5.4 kg propellant</td>
+<td>Calibrated to the speeds</td>
+</tr>
+<tr>
+<td>Diameter, subsonic Cd</td>
+<td>140 mm, 0.45</td>
+<td>Assumption</td>
+</tr>
+<tr>
+<td>Flap area, flap Cd, servo</td>
+<td>100 cm², 1.2, 0.5 s full travel</td>
+<td>Assumption</td>
+</tr>
+</tbody>
+</table>
+<p>Three versions of the flight computer were flown, identical except for how they turn pressure into altitude:</p>
+<ol>
+<li><strong>True altitude:</strong> converts pressure using its measured pad temperature and aims for 3,000 m of true height. This is also what a GPS-based or temperature-corrected computer does.</li>
+<li><strong>Library formula, mixed into the filter:</strong> the common 44,330 × (1 − (p/1013.25 hPa)^0.1903) pressure altitude, relative to the pad, fed straight into the same filter and predictor, aiming for 3,000. On its own this formula agrees with CATS to within 0.2 m; this version tests what happens when its heights meet an accelerometer and a predictor that work in true metres.</li>
+<li><strong>Logger altitude:</strong> keeps the physics in true metres, but its target is the pressure at which CATS reads 3,000 m.</li>
+</ol>
+<p>The Monte Carlo drew 240 launch days at random:</p>
+<ul>
+<li><strong>Weather:</strong> ground temperature 12 to 30 °C, lapse rate 5 to 8 K/km, pad pressure 995 to 1020 hPa, wind ±6 m/s.</li>
+<li><strong>Rocket:</strong> body drag ±7%, motor impulse ±3%, mass ±1.5%, flap drag ±10% (1σ).</li>
+<li><strong>Sensors and actuator:</strong> accelerometer bias, pad temperature sensor ±1 K, transonic barometer error, servo speed.</li>
+</ul>
+<p>Each day was flown with all three computers. The logged apogee is the CATS formula applied to the pressure at the true apogee.</p>
+<h2>3. Results</h2>
+<p>Aiming for the logger's altitude keeps the scored apogee within 6 m of target from 5 to 30 °C; aiming for true altitude drifts by about 10 m per °C.</p>
+<p>With the nominal rocket on a calm day, the true-altitude computer was logged at +111 m on a 5 °C day and −146 m on a 30 °C day. The library-formula version did well near 15 °C but drifted to −143 m and +38 m at the extremes. The formula is not the problem: its barometer heights are in "15 °C metres" while the accelerometer, drag learning and predictor work in true metres, so the filter mixes two scales and mis-estimates bias and speed. Converting only the target, as the logger version does, avoids this.</p>
+<p><img alt="Logged apogee miss against ground temperature for the three flight computers" src="../figures/step8_logged_vs_temperature.png" /></p>
+<p>Across the random launch days, 139 of 240 could reach a logged 3,000 m with the flaps closed. Statistics are for those flights:</p>
+<table>
+<thead>
+<tr>
+<th>Flight computer aims for</th>
+<th>Mean logged miss</th>
+<th>1σ</th>
+<th>95% of flights</th>
+<th>Within ±25 m</th>
+<th>Drift per °C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>True 3,000 m</td>
+<td>−61.6 m</td>
+<td>55.1 m</td>
+<td>−148 to +34 m</td>
+<td>21.6%</td>
+<td>−10.2 m</td>
+</tr>
+<tr>
+<td>Library formula, mixed into the filter</td>
+<td>+30.5 m</td>
+<td>31.3 m</td>
+<td>−23 to +91 m</td>
+<td>44.6%</td>
+<td>+5.1 m</td>
+</tr>
+<tr>
+<td>Logger's 3,000 m</td>
+<td>−2.3 m</td>
+<td>15.3 m</td>
+<td>−33 to +19 m</td>
+<td>91.4%</td>
+<td>−0.3 m</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Logged apogee miss across 139 simulated launch days" src="../figures/step8_monte_carlo.png" /></p>
+<p>The 101 flights that could not reach the target fell short mainly through lower motor impulse and higher drag, then wind blowing back over the pad and warmer days (73% could reach the target below 18 °C, 52% above 24 °C). The model's assumed overshoot margin is only about 125 m on a standard day. Treat that count as a warning about margin, not as a prediction for Eclipse: it depends heavily on the assumed diameter and drag.</p>
+<h2>4. Recommendation: aim for a pressure, not a height</h2>
+<p>Set the airbrake target as the pressure at which CATS will read 3,000 m, computed on the pad from the same formula. The logger only ever sees pressure, so reaching that pressure at apogee scores 3,000 m whatever the weather.</p>
+<ol>
+<li><strong>On the pad,</strong> average the barometer over the same window CATS uses before liftoff (about 5 s), giving p_pad.</li>
+<li><strong>Compute the target pressure</strong> with the CATS constants: h₀ = H(p_pad), then p_target = 101,250 × (1 − (3000 + h₀) × 0.0065 / 288.15)^5.257, where H is the formula in section 1.</li>
+<li><strong>Keep the guidance physics in true metres.</strong> Convert pressure to true height with your best atmosphere model, run the filter and the apogee predictor as now, and convert p_target into a true-height target with the same model. Temperature errors cancel at apogee, because the same model converts both the measurement and the target.</li>
+<li><strong>Do not mix unit systems</strong> inside the filter: a barometer in "15 °C metres" fused with an accelerometer in true metres caused the library formula's drift above.</li>
+<li><strong>Size the motor for the hottest expected day:</strong> a logged 3,000 m at 30 °C needs about 3,160 m of true height before the airbrake has anything to remove.</li>
+</ol>
+<pre><code class="language-python">def cats_height(p):           # identical to CATS Vega calculate_height()
+    return -((p / 101250.0) ** (1 / 5.257) - 1) * 288.15 / 0.0065
+
+def target_pressure(p_pad, target_m=3000.0):
+    h = target_m + cats_height(p_pad)
+    return 101250.0 * (1 - h * 0.0065 / 288.15) ** 5.257
+</code></pre>
+<p><strong>Bench test before the next campaign:</strong> put the team's flight computer and a CATS Vega in the same sealed jar, pump it down slowly from ground pressure to about 700 hPa, and log both. The two altitude traces should agree to within sensor noise when the team's computer reports in logger units. A difference that grows with altitude means the formulas differ.</p>
+<h2>5. Limits and questions for the team</h2>
+<p>The size of the effect is solid: it follows directly from the firmware and basic physics. How much it affected Eclipse is unknown, because that depends on choices inside the team's flight computer that are not public.</p>
+<p><strong>Limits</strong></p>
+<ul>
+<li>The rocket is a reconstruction from three public numbers; diameter, drag and flap size are assumptions.</li>
+<li>The model is a 2-D point mass with instant weathercocking; no gusts or 6-DOF dynamics.</li>
+<li>The CATS logger's own Kalman filtering and sensor noise are not modelled; the logged apogee is taken as the formula applied to the true apogee pressure.</li>
+<li>Real launch-day atmospheres can have inversions; the lapse range used was 5 to 8 K/km. Aiming for a pressure stays correct with any profile; only the size of the true-altitude error changes.</li>
+<li>The pad temperature error of ±1 K is optimistic for a sensor inside a sun-heated avionics bay, and bay heating then cooling in flight can drift a barometer by about 4 m after the pad reference is frozen.</li>
+<li>The firmware read is commit f366de8 of the public repository; the version flown at EuRoC may differ, so the constants should be confirmed with the organisers.</li>
+</ul>
+<p><strong>Questions that would settle it</strong></p>
+<ul>
+<li>☐ How does the airbrake computer convert pressure to altitude: fixed 15 °C, measured temperature, GPS, or a fused estimate?</li>
+<li>☐ What was the ground temperature at Eclipse's launch time, and what apogee did the team's own computer record next to the official 3,065 m?</li>
+<li>☐ Could the Eclipse logs (team computer and CATS) be shared? Comparing the two altitude traces would measure this offset directly.</li>
+</ul>
+<h2>Sources</h2>
+<ul>
+<li><a href="https://github.com/catsystems/cats-embedded">CATS Vega firmware, catsystems/cats-embedded</a> (commit f366de8, files cited in section 1)</li>
+<li><a href="https://euroc.pt/wp-content/uploads/2025/03/PTS_EDU_EuRoC_ST_001928_SRD_v01-1.pdf">EuRoC System Requirements Document 2025</a>: mandatory CATS Vega, 12 m rail at 84°, airbrake requirements</li>
+<li><a href="https://euroc.pt/wp-content/uploads/2026/05/PTS_EDU_EuRoC_ST_001905_CR_v1.1.pdf">EuRoC Competition Rules 2026</a>: Flight Performance worth 350 of 1,000 points</li>
+<li><a href="https://www.muszaki-magazin.hu/2026/09/29/suborbitals-bme-raketa-fejlesztes-2">Eclipse mission parameters, Műszaki Magazin</a>: liftoff mass, rail exit and maximum speed, airbrake window</li>
+<li><a href="https://hirnavigator.hu/hir/10979984-remekul-szerepelt-a-bme-suborbitals-az-euroc-versenyen">EuRoC 2026 result, hirnavigator.hu</a>: Eclipse apogee 3,065 m</li>
+<li><a href="https://tonuonu.github.io/MyLevel1Peregrine/flight/flight1-analysis">Independent CATS Vega flight analysis</a>: notes the hardcoded 15 °C</li>
+<li><a href="https://sunheron.com/europe/portugal/central-portugal-weather-october/">Central Portugal October climate, Sunheron</a>: 21 °C average daytime</li>
+<li>Analysis code and data: <a href="https://github.com/Estiuk726/airbrake-apogee-control/blob/main/eclipse.py"><code>eclipse.py</code></a>, <a href="https://github.com/Estiuk726/airbrake-apogee-control/blob/main/official_logger.py"><code>official_logger.py</code></a>, <a href="https://github.com/Estiuk726/airbrake-apogee-control/blob/main/results/official_logger.json"><code>results/official_logger.json</code></a></li>
+</ul></main></body></html>
